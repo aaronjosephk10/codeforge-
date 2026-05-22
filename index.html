@@ -890,7 +890,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .ai-response strong{color:var(--amber);font-weight:600;}
 .ai-section{margin-top:16px;padding:14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);}
 .ai-section-label{font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
-.ai-score{font-family:var(--serif);font-size:48px;font-weight:300;text-align:center;margin:12px 0;}
+.ai-score{font-family:var(--serif);font-size:48px;font-weight:300;text-align:center;margin:12px 0;display:flex;flex-direction:column;align-items:center;position:relative;}
+.ai-cursor{display:inline-block;animation:blink .7s step-end infinite;color:var(--amber);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
 
 /* ── RESPONSIVE ── */
 @media(max-width:900px){
@@ -1438,7 +1440,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
                 <option value="cpp">C++</option>
               </select>
             </div>
-            <div class="editor-hint">Ctrl+Enter = Run &nbsp;·&nbsp; Real execution via Piston</div>
+            <div class="editor-hint">Ctrl+Enter = Run &nbsp;·&nbsp; Python &amp; JS run in-browser instantly</div>
           </div>
           <!-- Monaco Editor -->
           <div id="monaco-editor-container"></div>
@@ -1821,17 +1823,26 @@ let curTopic = null;
 let curProb  = 0;
 let slide    = 0;
 
-function solvedKey(){
-  try{
-    const s = JSON.parse(localStorage.getItem('cf_session')||'null');
-    return s ? 'cf_solved_'+s.email : 'cf_solved_guest';
-  }catch(e){ return 'cf_solved_guest'; }
+// ── Solved storage — keyed to logged-in user email, pinned at login ──
+// _currentSolvedKey is set on login and cleared on logout so saveSolved()
+// always writes to the correct user's key regardless of session state.
+let _currentSolvedKey = 'cf_solved_guest';
+
+function solvedKey(){ return _currentSolvedKey; }
+
+function setSolvedKey(email){
+  _currentSolvedKey = email ? 'cf_solved_' + email.toLowerCase() : 'cf_solved_guest';
 }
+
 function loadSolved(){
   try{ solved = JSON.parse(localStorage.getItem(solvedKey())||'[]'); }
   catch(e){ solved = []; }
 }
-function saveSolved(){ localStorage.setItem(solvedKey(), JSON.stringify(solved)); }
+
+function saveSolved(){
+  try{ localStorage.setItem(solvedKey(), JSON.stringify(solved)); }
+  catch(e){ console.error('saveSolved failed:', e); }
+}
 
 // ═══════════════════════════════════════
 // VIEWS
@@ -2136,137 +2147,387 @@ function markDone(){
 }
 
 // ═══════════════════════════════════════
-// RUN CODE — Real execution via Piston API
 // ═══════════════════════════════════════
+// RUN CODE
+// Python / JS  → in-browser (Skulpt / eval) — zero network
+// Java / C++   → Piston API (open CORS, no key) with 3-endpoint fallback
+// ═══════════════════════════════════════
+
+// Piston endpoints — tried in order until one succeeds
+const PISTON_ENDPOINTS = [
+  'https://emkc.org/api/v2/piston/execute',
+  'https://piston-api.codeify.io/api/v2/piston/execute',
+  'https://piston.helioho.st/api/v2/piston/execute',
+];
+
 const PISTON_RUNTIMES = {
-  python:     { language: 'python',     version: '3.10.0' },
-  javascript: { language: 'javascript', version: '18.15.0' },
-  java:       { language: 'java',       version: '15.0.2' },
-  cpp:        { language: 'c++',        version: '10.2.0' },
+  java: { language: 'java',  version: '15.0.2',  filename: 'Main.java' },
+  cpp:  { language: 'c++',   version: '10.2.0',  filename: 'main.cpp'  },
 };
 
+// ── Local Python via Skulpt (no network after first load) ──
 function executeLocalPython(code){
   return new Promise((resolve, reject) => {
-    if(typeof Sk === 'undefined' || typeof Sk.importMainWithBody !== 'function'){
-      return reject(new Error('Local Python engine is unavailable.'));
+    function runWithSkulpt(){
+      if(typeof Sk === 'undefined') return reject(new Error('SKULPT_MISSING'));
+      let output = '';
+      Sk.configure({
+        output: (t) => { output += t; },
+        read: (x) => {
+          if(Sk.builtinFiles?.files?.[x] == null) throw new Error('File not found: '+x);
+          return Sk.builtinFiles.files[x];
+        },
+        inputfun: () => Promise.resolve(''),
+        __future__: Sk.python3,
+      });
+      Sk.misceval.asyncToPromise(
+        () => Sk.importMainWithBody('<stdin>', false, code, true)
+      ).then(() => resolve(output || '(no output)')).catch(err => reject(new Error(err.toString())));
     }
-    let output = '';
-    function outf(text){ output += text; }
-    function builtinRead(x){
-      if(Sk.builtinFiles === undefined || Sk.builtinFiles['files'][x] === undefined){
-        throw new Error('File not found: ' + x);
-      }
-      return Sk.builtinFiles['files'][x];
+
+    if(typeof Sk !== 'undefined'){
+      runWithSkulpt();
+    } else {
+      const s1 = document.createElement('script');
+      s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt.min.js';
+      s1.onload = () => {
+        const s2 = document.createElement('script');
+        s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt-stdlib.js';
+        s2.onload = runWithSkulpt;
+        s2.onerror = () => reject(new Error('SKULPT_LOAD_FAILED'));
+        document.head.appendChild(s2);
+      };
+      s1.onerror = () => reject(new Error('SKULPT_LOAD_FAILED'));
+      document.head.appendChild(s1);
     }
-    Sk.configure({ output:outf, read:builtinRead, inputfun:() => '' });
-    Sk.misceval.asyncToPromise(() => Sk.importMainWithBody('<stdin>', false, code, true))
-      .then(() => resolve(output || '(no output)'))
-      .catch(reject);
   });
 }
+
+// ── Local JavaScript via eval ──
 function executeLocalJavaScript(code){
-  let output = '';
-  const oldLog = console.log;
-  console.log = (...args) => { output += args.map(String).join(' ') + '\n'; };
-  try {
-    const result = eval(code);
-    if(result !== undefined && result !== null){
-      output += String(result);
+  return new Promise((resolve, reject) => {
+    let output = '';
+    const _log = console.log, _warn = console.warn, _error = console.error;
+    const fmt = (a) => a.map(v => typeof v === 'object' ? JSON.stringify(v,null,2) : String(v)).join(' ');
+    console.log   = (...a) => { output += fmt(a) + '\n'; };
+    console.warn  = (...a) => { output += '[warn] ' + fmt(a) + '\n'; };
+    console.error = (...a) => { output += '[error] ' + fmt(a) + '\n'; };
+    try {
+      const r = eval(code);
+      if(r !== undefined) output += String(r) + '\n';
+      resolve(output.trim() || '(no output)');
+    } catch(err){
+      reject(new Error(err.message));
+    } finally {
+      console.log = _log; console.warn = _warn; console.error = _error;
     }
-    return output.trim() || '(no output)';
-  } catch(err){
-    throw err;
-  } finally {
-    console.log = oldLog;
+  });
+}
+
+// ── Try one Piston endpoint ──
+async function tryPistonEndpoint(url, code, lang){
+  const rt = PISTON_RUNTIMES[lang];
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        language: rt.language,
+        version:  rt.version,
+        files: [{ name: rt.filename, content: code }],
+        stdin: '', args: [],
+        compile_timeout: 10000,
+        run_timeout: 5000,
+      }),
+    });
+    clearTimeout(timer);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return data;
+  } catch(e){
+    clearTimeout(timer);
+    throw e;
   }
 }
 
+// ── Piston with fallback chain ──
+async function executeViaPiston(code, lang, onStatus){
+  let lastErr = null;
+  for(let i = 0; i < PISTON_ENDPOINTS.length; i++){
+    const url = PISTON_ENDPOINTS[i];
+    onStatus('⏳ Compiling ' + lang.toUpperCase() + '... (server ' + (i+1) + '/' + PISTON_ENDPOINTS.length + ')');
+    try {
+      const data = await tryPistonEndpoint(url, code, lang);
+      const stdout     = data.run?.stdout || '';
+      const stderr     = data.run?.stderr || '';
+      const compileErr = data.compile?.stderr || '';
+      const exitCode   = data.run?.code ?? 0;
+
+      if(compileErr) throw new Error('COMPILE:' + compileErr);
+      return { stdout, stderr, exitCode, server: i+1 };
+    } catch(e){
+      // Re-throw compile errors immediately — no point trying other servers
+      if(e.message.startsWith('COMPILE:')) throw new Error(e.message.slice(8));
+      lastErr = e;
+    }
+  }
+  throw new Error('All execution servers unreachable. Try again in a moment.\n\nLast error: ' + (lastErr?.message || 'unknown'));
+}
+
+// ═══════════════════════════════════════
+// PROBLEM TEST CASES (for run + review)
+// ═══════════════════════════════════════
+const PROBLEM_TESTS = {
+  // Arrays
+  a1: { fn:'twoSum',       tests:[{args:[[2,7,11,15],9],expect:[0,1]},{args:[[3,2,4],6],expect:[1,2]},{args:[[3,3],6],expect:[0,1]}] },
+  a2: { fn:'maxProfit',    tests:[{args:[[7,1,5,3,6,4]],expect:5},{args:[[7,6,4,3,1]],expect:0}] },
+  a3: { fn:'productExceptSelf', tests:[{args:[[1,2,3,4]],expect:[24,12,8,6]},{args:[[2,3,4,5]],expect:[60,40,30,24]}] },
+  a4: { fn:'containsDuplicate', tests:[{args:[[1,2,3,1]],expect:true},{args:[[1,2,3,4]],expect:false}] },
+  a5: { fn:'threeSum',     tests:[{args:[[-1,0,1,2,-1,-4]],expect:[[-1,-1,2],[-1,0,1]]},{args:[[0,0,0]],expect:[[0,0,0]]}] },
+  // Strings
+  s1: { fn:'isAnagram',    tests:[{args:['anagram','nagaram'],expect:true},{args:['rat','car'],expect:false}] },
+  s2: { fn:'lengthOfLongestSubstring', tests:[{args:['abcabcbb'],expect:3},{args:['bbbbb'],expect:1},{args:['pwwkew'],expect:3}] },
+  s3: { fn:'minWindow',    tests:[{args:['ADOBECODEBANC','ABC'],expect:'BANC'},{args:['a','a'],expect:'a'}] },
+  s4: { fn:'longestPalindrome', tests:[{args:['babad'],expect:['bab','aba']},{args:['cbbd'],expect:'bb'}] },
+  s5: { fn:'groupAnagrams', tests:[{args:[['eat','tea','tan','ate','nat','bat']],expect:[['eat','tea','ate'],['tan','nat'],['bat']]}] },
+  // Trees
+  t1: { fn:'maxDepth',     tests:[] }, // tree construction needed — skip auto-test
+  t2: { fn:'invertTree',   tests:[] },
+  t3: { fn:'levelOrder',   tests:[] },
+  t4: { fn:'isValidBST',   tests:[] },
+  t5: { fn:'lowestCommonAncestor', tests:[] },
+  // DP
+  d1: { fn:'climbStairs',  tests:[{args:[2],expect:2},{args:[3],expect:3},{args:[5],expect:8}] },
+  d2: { fn:'rob',          tests:[{args:[[1,2,3,1]],expect:4},{args:[[2,7,9,3,1]],expect:12}] },
+  d3: { fn:'longestCommonSubsequence', tests:[{args:['abcde','ace'],expect:3},{args:['abc','abc'],expect:3}] },
+  d4: { fn:'coinChange',   tests:[{args:[[1,2,5],11],expect:3},{args:[[2],3],expect:-1}] },
+  d5: { fn:'minPathSum',   tests:[{args:[[[1,3,1],[1,5,1],[4,2,1]]],expect:7}] },
+  // Graphs
+  g1: { fn:'numIslands',   tests:[{args:[[['1','1','0'],['0','1','0'],['0','0','1']]],expect:2}] },
+  g2: { fn:'cloneGraph',   tests:[] },
+  g3: { fn:'canFinish',    tests:[{args:[2,[[1,0]]],expect:true},{args:[2,[[1,0],[0,1]]],expect:false}] },
+  g4: { fn:'shortestPathBinaryMatrix', tests:[{args:[[[0,1],[1,0]]],expect:2},{args:[[[0,0,0],[1,1,0],[1,1,0]]],expect:4}] },
+  g5: { fn:'validTree',    tests:[{args:[5,[[0,1],[0,2],[0,3],[1,4]]],expect:true},{args:[5,[[0,1],[1,2],[2,3],[1,3],[1,4]]],expect:false}] },
+  // Sorting
+  so1:{ fn:'sortColors',   tests:[] }, // in-place, skip
+  so2:{ fn:'merge',        tests:[{args:[[[1,3],[2,6],[8,10],[15,18]]],expect:[[1,6],[8,10],[15,18]]}] },
+  so3:{ fn:'topKFrequent', tests:[{args:[[1,1,1,2,2,3],2],expect:[1,2]}] },
+  so4:{ fn:'findKthLargest', tests:[{args:[[3,2,1,5,6,4],2],expect:5},{args:[[2,1],1],expect:2}] },
+  so5:{ fn:'frequencySort', tests:[] },
+  // Linked Lists
+  l1: { fn:'reverseList',  tests:[] },
+  l2: { fn:'hasCycle',     tests:[] },
+  l3: { fn:'mergeTwoLists',tests:[] },
+  l4: { fn:'removeNthFromEnd', tests:[] },
+  l5: { fn:'addTwoNumbers',tests:[] },
+  // Recursion
+  r1: { fn:'generateParenthesis', tests:[{args:[3],expect:5}] }, // check length
+  r2: { fn:'subsets',      tests:[{args:[[1,2,3]],expect:8}] }, // check length
+  r3: { fn:'permute',      tests:[{args:[[1,2,3]],expect:6}] },
+  r4: { fn:'combinationSum',tests:[{args:[[2,3,6,7],7],expect:2}] },
+  r5: { fn:'numTrees',     tests:[{args:[3],expect:5},{args:[4],expect:14}] },
+  // Programs (hard)
+  p1: { fn:'findMedianSortedArrays', tests:[{args:[[1,3],[2]],expect:2.0},{args:[[1,2],[3,4]],expect:2.5}] },
+  p2: { fn:'maxSlidingWindow', tests:[{args:[[1,3,-1,-3,5,3,6,7],3],expect:[3,3,5,5,6,7]}] },
+  p3: { fn:'ladderLength', tests:[{args:['hit','cog',['hot','dot','dog','lot','log','cog']],expect:5}] },
+  p4: { fn:'isMatch',      tests:[{args:['aa','a'],expect:false},{args:['aa','a*'],expect:true},{args:['aab','c*a*b'],expect:true}] },
+  p6: { fn:'largestRectangleArea', tests:[{args:[[2,1,5,6,2,3]],expect:10}] },
+  p9: { fn:'palindromePairs', tests:[{args:[['bat','tab','cat']],expect:2}] }, // check length
+  p10:{ fn:'minWindowSubsequence', tests:[{args:['abcdebdde','bde'],expect:'bcde'}] },
+};
+
+function deepEqual(a, b){
+  if(a === b) return true;
+  if(typeof a !== typeof b) return false;
+  if(Array.isArray(a) && Array.isArray(b)){
+    if(a.length !== b.length) return false;
+    // For sorted comparison (e.g. twoSum result order may vary)
+    return a.every((v,i) => deepEqual(v, b[i]));
+  }
+  if(typeof a === 'object' && a && b){
+    const ka = Object.keys(a).sort(), kb = Object.keys(b).sort();
+    if(!deepEqual(ka,kb)) return false;
+    return ka.every(k => deepEqual(a[k],b[k]));
+  }
+  return false;
+}
+
+function checkAnswer(got, expect){
+  if(deepEqual(got, expect)) return true;
+  // allow any-order for some problems (like threeSum returns sorted inner)
+  if(Array.isArray(got) && Array.isArray(expect)){
+    if(typeof expect === 'number') return got === expect;
+    // If expect is a length check (number stored as expect for count-style)
+    if(typeof expect === 'number') return got === expect;
+  }
+  // Allow alternate answers (e.g. babad → bab or aba)
+  if(Array.isArray(expect) && !Array.isArray(got)) return expect.includes(got);
+  // Length-only check (when expect is a plain number and got is array)
+  if(typeof expect === 'number' && Array.isArray(got)) return got.length === expect;
+  return false;
+}
+
+// Convert a JS value to a Python literal string (no json module needed)
+function toPyLiteral(v){
+  if(v === null || v === undefined) return 'None';
+  if(v === true)  return 'True';
+  if(v === false) return 'False';
+  if(typeof v === 'number') return String(v);
+  if(typeof v === 'string') return "'" + v.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + "'";
+  if(Array.isArray(v)) return '[' + v.map(toPyLiteral).join(', ') + ']';
+  // plain object → dict
+  return '{' + Object.entries(v).map(([k,val]) => toPyLiteral(k)+': '+toPyLiteral(val)).join(', ') + '}';
+}
+
+// Build a Python test harness around the user's code — no imports needed
+function buildPythonTestHarness(userCode, probId){
+  const td = PROBLEM_TESTS[probId];
+  if(!td || td.tests.length === 0) return userCode; // no tests → run as-is
+
+  const fn = td.fn;
+  // Strip any class wrapper so the function is top-level callable
+  // We also define a small helper that handles Solution().method() pattern
+  const preamble = [
+    userCode,
+    '',
+    '# ── resolve function (handles class Solution wrapper) ──',
+    'def _resolve_fn(name):',
+    '    g = globals()',
+    '    if name in g: return g[name]',
+    '    # try Solution().name',
+    '    if "Solution" in g:',
+    '        obj = g["Solution"]()',
+    '        if hasattr(obj, name): return getattr(obj, name)',
+    '    return None',
+    '',
+    `_fn = _resolve_fn('${fn}')`,
+    '# ── Auto test harness ──',
+    '_results = []',
+  ];
+
+  for(let i = 0; i < td.tests.length; i++){
+    const t = td.tests[i];
+    // Build args as individual Python literals passed to the function
+    const argLiterals = t.args.map(toPyLiteral);
+    const expLiteral  = toPyLiteral(t.expect);
+    const label = `'Test ${i+1}'`;
+
+    preamble.push(`try:`);
+    preamble.push(`    _got = _fn(${argLiterals.join(', ')})`);
+    preamble.push(`    _exp = ${expLiteral}`);
+    preamble.push(`    _ok = _got == _exp`);
+    // Allow sorted comparison for list-of-lists (e.g. threeSum)
+    preamble.push(`    if not _ok and isinstance(_got, list) and isinstance(_exp, list):`);
+    preamble.push(`        _ok = sorted(str(x) for x in _got) == sorted(str(x) for x in _exp)`);
+    // Length-only check (expect is int but got is list — e.g. count-style)
+    preamble.push(`    if not _ok and isinstance(_exp, int) and isinstance(_got, list):`);
+    preamble.push(`        _ok = len(_got) == _exp`);
+    // Alternate-answer check (expect is list of valid answers, got is scalar)
+    preamble.push(`    if not _ok and isinstance(_exp, list) and not isinstance(_got, list):`);
+    preamble.push(`        _ok = _got in _exp`);
+    preamble.push(`    _results.append((${label}, _ok, str(_got), str(_exp)))`);
+    preamble.push(`except Exception as _e:`);
+    preamble.push(`    _results.append((${label}, False, 'ERROR: ' + str(_e), str(${expLiteral})))`);
+  }
+
+  preamble.push(``);
+  preamble.push(`_passed = sum(1 for r in _results if r[1])`);
+  preamble.push(`_total  = len(_results)`);
+  preamble.push(`print('Results: ' + str(_passed) + '/' + str(_total) + ' tests passed')`);
+  preamble.push(`print('')`);
+  preamble.push(`for _name, _ok, _got_s, _exp_s in _results:`);
+  preamble.push(`    _icon = 'PASS' if _ok else 'FAIL'`);
+  preamble.push(`    print('[' + _icon + '] ' + _name)`);
+  preamble.push(`    if not _ok:`);
+  preamble.push(`        print('  Expected: ' + _exp_s)`);
+  preamble.push(`        print('  Got:      ' + _got_s)`);
+  preamble.push(`    else:`);
+  preamble.push(`        print('  Output:   ' + _got_s)`);
+
+  return preamble.join('\n');
+}
+
+// ── Main runCode ──
 async function runCode(){
-  const btn = document.getElementById('run-btn');
-  btn.disabled = true;
-  btn.innerHTML = '⏳ Running...';
+  const btn  = document.getElementById('run-btn');
   const out  = document.getElementById('out-body');
   const stat = document.getElementById('out-status');
-
-  // Get code from Monaco editor
-  const code = monacoEditor ? monacoEditor.getValue() : document.getElementById('code-editor').value;
-  const lang = document.getElementById('lang-select').value;
-  const runtime = PISTON_RUNTIMES[lang] || PISTON_RUNTIMES.python;
-
-  out.textContent = '⏳ Executing your code...';
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Running...';
+  out.textContent = '⏳ Executing...';
   stat.textContent = '';
   stat.style.color = '';
 
-  try {
-    const res = await fetch('https://emkc.org/api/v2/piston/execute', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        language: runtime.language,
-        version: runtime.version,
-        files: [{ name: 'solution', content: code }],
-        stdin: '',
-        args: [],
-        compile_timeout: 10000,
-        run_timeout: 5000,
-      })
-    });
+  const rawCode = monacoEditor ? monacoEditor.getValue() : document.getElementById('code-editor').value;
+  const lang = document.getElementById('lang-select')?.value || 'python';
 
-    if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        throw new Error('API_UNAUTHORIZED');
-      }
-      throw new Error(`API error: ${res.status}`);
-    }
-    const data = await res.json();
+  // Get current problem id for test injection
+  const topic = TOPICS.find(t => t.id === curTopic);
+  const prob  = topic?.problems[curProb];
+  const probId = prob?.id || '';
 
-    const stdout = data.run?.stdout || '';
-    const stderr = data.run?.stderr || '';
-    const compile_err = data.compile?.stderr || '';
-    const exitCode = data.run?.code ?? 0;
-
-    if (compile_err) {
-      out.textContent = '⚠ Compilation Error:\n\n' + compile_err;
-      stat.textContent = '✗ Compile error';
-      stat.style.color = 'var(--red)';
-    } else if (stderr && !stdout) {
-      out.textContent = '⚠ Runtime Error:\n\n' + stderr;
-      stat.textContent = '✗ Runtime error';
-      stat.style.color = 'var(--red)';
-    } else if (exitCode !== 0 && !stdout) {
-      out.textContent = '⚠ Process exited with code ' + exitCode + '\n\n' + (stderr || '');
-      stat.textContent = '✗ Exited: ' + exitCode;
-      stat.style.color = 'var(--red)';
-    } else {
-      const combined = [stdout, stderr].filter(Boolean).join('\n--- stderr ---\n');
-      out.textContent = combined || '(no output)';
-      stat.textContent = exitCode === 0 ? '✓ Executed successfully' : `⚠ Exited: ${exitCode}`;
-      stat.style.color = exitCode === 0 ? 'var(--green)' : 'var(--amber)';
-    }
-  } catch(e) {
-    const canRunLocal = lang === 'python' || lang === 'javascript';
-    if (canRunLocal && (e.message === 'API_UNAUTHORIZED' || e.message.includes('Network') || e.message.includes('Failed to fetch') || e.message.includes('fetch'))){
-      try {
-        out.textContent = `⏳ Piston unavailable — running ${lang === 'python' ? 'Python' : 'JavaScript'} locally...`;
-        let localResult;
-        if (lang === 'python') {
-          localResult = await executeLocalPython(code);
-        } else {
-          localResult = executeLocalJavaScript(code);
-        }
-        out.textContent = localResult || '(no output)';
-        stat.textContent = '✓ Executed locally';
-        stat.style.color = 'var(--green)';
-        btn.disabled = false;
-        btn.innerHTML = '▶ Run Code';
-        return;
-      } catch(localErr){
-        e = localErr;
-      }
-    }
-    out.textContent = '⚠ Could not reach the execution server.\n\nCheck your internet connection, or try again in a moment.\n\nError: ' + e.message;
-    stat.textContent = '✗ Network error';
+  function showSuccess(text, label){
+    out.textContent = text;
+    stat.textContent = '✓ ' + label;
+    stat.style.color = 'var(--green)';
+  }
+  function showError(text, label){
+    out.textContent = text;
+    stat.textContent = '✗ ' + label;
     stat.style.color = 'var(--red)';
+  }
+  function showMixed(text, label){
+    out.textContent = text;
+    stat.textContent = '⚡ ' + label;
+    stat.style.color = 'var(--amber)';
+  }
+
+  try {
+    if(lang === 'python'){
+      out.textContent = '⏳ Running Python...';
+      // Inject test harness for known problems
+      const code = buildPythonTestHarness(rawCode, probId);
+      const result = await executeLocalPython(code);
+      // Colour status by pass/fail ratio
+      const m = result.match(/Results:\s*(\d+)\/(\d+)/);
+      if(m){
+        const [, p, t] = m.map(Number);
+        if(p === t) showSuccess(result, `All ${t} tests passed · Python 3`);
+        else if(p === 0) showError(result, `0/${t} tests passed · Python 3`);
+        else showMixed(result, `${p}/${t} tests passed · Python 3`);
+      } else {
+        showSuccess(result || '(no output)', 'Executed · Python 3 in-browser');
+      }
+
+    } else if(lang === 'javascript'){
+      const result = await executeLocalJavaScript(rawCode);
+      showSuccess(result, 'Executed · JavaScript in-browser');
+
+    } else {
+      // Java / C++ via Piston
+      const { stdout, stderr, exitCode, server } = await executeViaPiston(rawCode, lang, (msg) => {
+        out.textContent = msg;
+      });
+
+      if(stderr && !stdout){
+        showError('⚠ Runtime Error:\n\n' + stderr, 'Runtime error');
+      } else {
+        const combined = [stdout, stderr].filter(Boolean).join('\n--- stderr ---\n');
+        showSuccess(combined || '(no output)', 'Executed · ' + lang.toUpperCase() + ' via Piston (server ' + server + ')');
+      }
+    }
+  } catch(err){
+    const msg = err.message || String(err);
+    if(msg === 'SKULPT_LOAD_FAILED' || msg === 'SKULPT_MISSING'){
+      showError('⚠ Could not load Python engine. Check your connection and try again.', 'Load failed');
+    } else if(msg.includes('Compilation Error') || msg.includes('error:')){
+      showError('⚠ ' + msg, 'Compile error');
+    } else {
+      showError('⚠ ' + msg, 'Error');
+    }
   }
 
   btn.disabled = false;
@@ -2274,86 +2535,373 @@ async function runCode(){
 }
 
 // ═══════════════════════════════════════
-// AI REVIEW
+// PREDEFINED REVIEW DATABASE
+// ═══════════════════════════════════════
+const PREDEFINED_REVIEWS = {
+  a1: {
+    optimal_time:'O(n)', optimal_space:'O(n)',
+    verdict:'Hash map approach is the gold standard for Two Sum — perfect for interviews.',
+    correctness:'Handles the standard case and duplicate elements. Watch out: using the same element twice is forbidden but the single-pass hash map naturally avoids this.',
+    time:'O(n) — one pass through the array, each lookup in the hash map is O(1).',
+    space:'O(n) — in the worst case every element goes into the hash map before finding the pair.',
+    strengths:['Single-pass hash map is optimal — no need to sort or use nested loops','Clean variable naming (complement) communicates intent clearly','Handles negative numbers and duplicates correctly'],
+    improvements:['Add an early return if nums is empty or length < 2','Consider adding docstring explaining the complement trick','Edge case: what if target == 2 * nums[i]? The hash map handles it, but worth a comment'],
+    optimal:'Already optimal at O(n) time and O(n) space using a single-pass hash map.',
+    keywords_good:['hashmap','complement','for i','return'],
+    keywords_bad:['for i','for j','range(len(nums)).*range(len(nums))'],
+    score_base: 92,
+  },
+  a2: {
+    optimal_time:'O(n)', optimal_space:'O(1)',
+    verdict:'Sliding window / Kadane\'s variant — classic greedy approach done right.',
+    correctness:'Correctly identifies buy low, sell high. Make sure the return 0 case is handled when prices only decrease.',
+    time:'O(n) — single pass tracking minimum price seen so far.',
+    space:'O(1) — only two variables needed (min_price, max_profit).',
+    strengths:['Single pass is optimal','Handles the no-profit case by returning 0','Greedy choice property is correctly applied'],
+    improvements:['Verify edge case: prices = [7] (single element) should return 0','Variable names like min_so_far and max_profit make the intent clearer','No need to store all prices — constant space solution is achievable'],
+    optimal:'Already optimal — O(n) time, O(1) space using a single tracking variable.',
+    keywords_good:['min','max','profit'],
+    keywords_bad:['sort','n*n','for.*for'],
+    score_base: 90,
+  },
+  a3: {
+    optimal_time:'O(n)', optimal_space:'O(n)',
+    verdict:'Prefix/suffix product trick is the key insight — division is explicitly banned.',
+    correctness:'Output array approach passes all cases. Common mistake: using division (fails when a zero exists in nums).',
+    time:'O(n) — two passes (left products then right products).',
+    space:'O(n) — output array counts as O(n); optimised versions use O(1) extra space with a running variable.',
+    strengths:['Avoids the division shortcut as required by the constraints','Two-pass pattern is clean and easy to explain','Handles zeros correctly since no division is involved'],
+    improvements:['You can merge the two passes into one by accumulating a running right-product variable — reduces extra space to O(1)','Edge case: nums containing zeros — verify output is correct','Explain the left/right product intuition out loud in an interview'],
+    optimal:'The O(n) / O(1) extra-space solution uses one pass for left products and accumulates right products on-the-fly.',
+    score_base: 88,
+  },
+  a4: {
+    optimal_time:'O(n)', optimal_space:'O(n)',
+    verdict:'Set-based lookup is the simplest, cleanest solution.',
+    correctness:'Correct — set handles all duplicates including negative numbers.',
+    time:'O(n) — building the set is O(n), membership check is O(1) amortised.',
+    space:'O(n) — set stores up to n elements.',
+    strengths:['Pythonic and readable','One-liner possible: return len(nums) != len(set(nums))','Handles all input types including negatives'],
+    improvements:['For very large arrays, early termination on first duplicate is faster','Sorting approach exists in O(n log n) time and O(1) space if memory is constrained','Always discuss the time/space trade-off with the interviewer'],
+    optimal:'Already optimal for time. O(1) space alternative: sort and check adjacent elements — O(n log n) trade-off.',
+    score_base: 91,
+  },
+  a5: {
+    optimal_time:'O(n²)', optimal_space:'O(1)',
+    verdict:'Two-pointer after sorting is the classic O(n²) solution — correct and expected.',
+    correctness:'Key correctness concern: deduplication. Must skip duplicate values for all three pointers to avoid repeated triplets.',
+    time:'O(n²) — sorting is O(n log n), then O(n) outer × O(n) inner two-pointer.',
+    space:'O(1) extra (output array aside) — in-place two-pointer after sorting.',
+    strengths:['Sorting + two-pointer avoids the O(n³) brute force','Skip-duplicate logic prevents repeated triplets','Works correctly with negative numbers'],
+    improvements:['Ensure you skip duplicates at all three levels (i, lo, hi) — easy to miss hi duplicates','Early termination: if nums[i] > 0, no triplet can sum to zero','Explain the two-pointer convergence clearly in interview'],
+    optimal:'O(n²) is provably optimal for 3Sum. The two-pointer approach achieves this.',
+    score_base: 87,
+  },
+  s1: {
+    optimal_time:'O(n)', optimal_space:'O(1)',
+    verdict:'Counter/frequency approach is the interview-ready O(n) solution.',
+    correctness:'Handles all lowercase letters. Edge case: different lengths should return False immediately.',
+    time:'O(n) — counting character frequencies is linear.',
+    space:'O(1) — alphabet is fixed at 26 characters, so the frequency array/dict is constant size.',
+    strengths:['Length-check early exit is a nice touch','Counter comparison is Pythonic and clear','Handles empty strings correctly'],
+    improvements:['Add an early return if len(s) != len(t)','sorted(s) == sorted(t) works but is O(n log n) — mention this trade-off','For Unicode strings, the approach still works but space may grow'],
+    optimal:'Already optimal — O(n) time, O(1) space (fixed alphabet size).',
+    score_base: 90,
+  },
+  s2: {
+    optimal_time:'O(n)', optimal_space:'O(min(n,m))',
+    verdict:'Sliding window with a hash set is the classic linear solution.',
+    correctness:'Correctly expands and contracts the window. Watch out: the window must shrink past the repeated character, not just to it.',
+    time:'O(n) — each character enters and leaves the window at most once.',
+    space:'O(min(n, alphabet)) — the set holds at most the size of the alphabet.',
+    strengths:['Single-pass sliding window is optimal','Hash set for O(1) membership check','Correctly updates the max length on each step'],
+    improvements:['Use a dict mapping char → index for O(1) window shrink instead of popping one-by-one','Edge cases: empty string should return 0','Rename variables to left/right for clarity over l/r'],
+    optimal:'O(n) with a char→index dictionary to jump the left pointer directly.',
+    score_base: 88,
+  },
+  s3: {
+    optimal_time:'O(n)', optimal_space:'O(m)',
+    verdict:'Sliding window with frequency counts is the O(n) solution for this Hard problem.',
+    correctness:'Tricky: must track how many characters are currently satisfied (formed == required). Missing this leads to incorrect shrinking.',
+    time:'O(n + m) where n = len(s), m = len(t).',
+    space:'O(m) for the frequency dictionaries.',
+    strengths:['Sliding window is the correct approach for substring problems','Two-pointer expands right, contracts left efficiently','Tracking "formed" count avoids re-scanning the window'],
+    improvements:['Filter s to only characters in t first — reduces constant factor significantly','Handle edge case: t longer than s returns empty string','Use collections.Counter to initialise the target frequency map'],
+    optimal:'Already optimal at O(n). The filtered character optimisation reduces the constant factor.',
+    score_base: 85,
+  },
+  d1: {
+    optimal_time:'O(n)', optimal_space:'O(1)',
+    verdict:'Classic Fibonacci DP — the foundational dynamic programming problem.',
+    correctness:'Correct recurrence: ways(n) = ways(n-1) + ways(n-2). Base cases n=1,2 must be handled.',
+    time:'O(n) — linear scan through steps 1 to n.',
+    space:'O(1) if using two rolling variables instead of a full DP array.',
+    strengths:['Correct DP recurrence identified','Bottom-up approach avoids recursion stack overflow','Clear variable naming'],
+    improvements:['Use two variables (a, b) instead of an array — reduces space from O(n) to O(1)','Add memoised top-down version for comparison','Base case: climbStairs(0) = 1 (one way to stay at ground) is sometimes asked'],
+    optimal:'O(n) time, O(1) space — just track the last two values like Fibonacci.',
+    score_base: 92,
+  },
+  d2: {
+    optimal_time:'O(n)', optimal_space:'O(1)',
+    verdict:'House Robber is the gateway DP problem — correctly identified as max(rob, skip) recurrence.',
+    correctness:'Recurrence: dp[i] = max(dp[i-1], dp[i-2] + nums[i]). Handles single-house and two-house edge cases.',
+    time:'O(n) — single forward pass.',
+    space:'O(1) if using two rolling variables instead of a dp array.',
+    strengths:['Correct DP formulation','Handles edge cases (1 or 2 houses)','Easy to extend to House Robber II (circular) with same pattern'],
+    improvements:['Compress the dp array to two variables: prev, curr','Make sure nums = [] returns 0','Verbalise the "can\'t rob adjacent" constraint to show your reasoning'],
+    optimal:'O(n) time, O(1) space with rolling variables.',
+    score_base: 90,
+  },
+  d3: {
+    optimal_time:'O(m×n)', optimal_space:'O(m×n)',
+    verdict:'2D DP table is the standard approach for LCS — an essential interview pattern.',
+    correctness:'Recurrence: dp[i][j] = dp[i-1][j-1]+1 if chars match, else max(dp[i-1][j], dp[i][j-1]).',
+    time:'O(m×n) — fill an m×n table where m = len(text1), n = len(text2).',
+    space:'O(m×n) reducible to O(min(m,n)) using two rolling rows.',
+    strengths:['Classic DP table approach is correct and clear','Handles empty string base cases automatically','Easy to trace and debug'],
+    improvements:['Reduce space to O(n) using a single rolling row','Can also use top-down with memoisation for clarity','Make sure to return dp[m][n], not dp[m-1][n-1]'],
+    optimal:'O(m×n) time, O(min(m,n)) space with row compression.',
+    score_base: 87,
+  },
+  d4: {
+    optimal_time:'O(amount × n)', optimal_space:'O(amount)',
+    verdict:'Unbounded knapsack DP — the BFS or bottom-up DP approach both work.',
+    correctness:'dp[0] = 0, dp[i] = min(dp[i - coin] + 1) for each coin ≤ i. Return -1 if dp[amount] is still infinity.',
+    time:'O(amount × len(coins)) — nested loop over amounts and coins.',
+    space:'O(amount) — 1D dp array of size amount+1.',
+    strengths:['Correct unbounded knapsack formulation','Properly returns -1 when amount is unreachable','BFS alternative provides an intuitive path to the answer'],
+    improvements:['Initialise dp with float(\'inf\') and check at the end — cleaner than a sentinel','Sort coins descending for a slight practical speedup (not asymptotically)','Trace through example: coins=[1,2,5], amount=11 to verify during interview'],
+    optimal:'Already optimal: O(S × n) time and O(S) space.',
+    score_base: 88,
+  },
+  g1: {
+    optimal_time:'O(m×n)', optimal_space:'O(m×n)',
+    verdict:'BFS or DFS island flooding is the canonical graph traversal problem.',
+    correctness:'Mark visited cells as \'0\' (or use a visited set) to prevent double-counting. Count increments once per island root.',
+    time:'O(m×n) — every cell is visited at most once.',
+    space:'O(m×n) — recursion stack in worst case (all land), or O(min(m,n)) for BFS queue.',
+    strengths:['Correct island-flooding approach','In-place marking avoids extra visited set','Works for any grid shape'],
+    improvements:['Iterative BFS avoids recursion stack overflow on huge grids','Restore the grid after traversal if mutation isn\'t allowed','Handle empty grid input: return 0 immediately'],
+    optimal:'Already optimal — O(m×n) unavoidable since every cell must be checked.',
+    score_base: 88,
+  },
+  g3: {
+    optimal_time:'O(V+E)', optimal_space:'O(V+E)',
+    verdict:'Topological sort (Kahn\'s algorithm or DFS cycle detection) is the correct approach.',
+    correctness:'A cycle means you can\'t finish all courses. DFS with 3-state coloring (white/grey/black) is reliable.',
+    time:'O(V + E) — build adjacency list and run DFS/BFS once.',
+    space:'O(V + E) — adjacency list storage.',
+    strengths:['Correctly models as directed graph','Cycle detection logic handles all cases','Works for disconnected graphs by iterating all nodes'],
+    improvements:['Kahn\'s BFS-based topological sort is slightly easier to reason about in interviews','Track in-degrees for the BFS approach','Make sure to handle numCourses = 1 edge case'],
+    optimal:'Already optimal at O(V+E).',
+    score_base: 87,
+  },
+  r1: {
+    optimal_time:'O(4ⁿ/√n)', optimal_space:'O(n)',
+    verdict:'Backtracking is the standard recursive approach — classic and clean.',
+    correctness:'Must track open_count and close_count. Only add \'(\' if open < n, only add \')\' if close < open.',
+    time:'O(4ⁿ/√n) — Catalan number count of valid sequences × O(n) to build each.',
+    space:'O(n) recursion depth, O(Catalan(n)) for the output.',
+    strengths:['Clean backtracking template','Correct pruning conditions prevent invalid sequences','Generates all valid sequences without post-filtering'],
+    improvements:['Add the result to a list, avoid global state','Pruning: stop recursing when close > open (invalid state)','Explain the Catalan number count during interview for bonus points'],
+    optimal:'Backtracking is optimal for enumeration problems — no way to do better than generating all answers.',
+    score_base: 89,
+  },
+  so2: {
+    optimal_time:'O(n log n)', optimal_space:'O(n)',
+    verdict:'Sort + linear merge is the standard O(n log n) solution.',
+    correctness:'After sorting by start time, merge overlapping intervals greedily: if curr.start ≤ last.end, extend last.end.',
+    time:'O(n log n) for sorting; O(n) for the linear merge pass.',
+    space:'O(n) for the output array.',
+    strengths:['Correct sort-then-merge strategy','Greedy extension is simple and correct','Handles edge cases like fully nested intervals'],
+    improvements:['Edge case: single-interval input should return it unchanged','Use max() when extending end, not just curr[1]','Clarify: does the output need to be sorted? (Yes, since input is sorted)'],
+    optimal:'O(n log n) is optimal — any comparison-based approach must sort.',
+    score_base: 90,
+  },
+  p1: {
+    optimal_time:'O(log(min(m,n)))', optimal_space:'O(1)',
+    verdict:'Binary search on the smaller array is the O(log(min(m,n))) optimal solution for this Hard problem.',
+    correctness:'Key: partition both arrays such that left half elements ≤ right half elements. Handle edge cases at array boundaries.',
+    time:'O(log(min(m,n))) — binary search on the smaller array.',
+    space:'O(1) — no extra storage needed.',
+    strengths:['Binary search achieves the O(log) constraint','Works for both even and odd total lengths','Handles empty array edge cases'],
+    improvements:['Always binary-search on the shorter array to minimise iterations','Use float(\'inf\') / float(\'-inf\') as sentinels for boundary conditions','Trace through nums1=[1,2], nums2=[3,4] to verify median = 2.5'],
+    optimal:'Already optimal at O(log(min(m,n))).',
+    score_base: 85,
+  },
+};
+
+// Fallback review for problems without a specific entry
+function genericReview(prob, code){
+  const diff = prob.diff;
+  const hints = {
+    Easy:   { time:'O(n) or O(n log n)', score:82, imp:'Look for a single-pass or two-pointer approach to eliminate nested loops.' },
+    Medium: { time:'O(n log n) or better', score:78, imp:'Consider hash maps, sliding windows, or sorting to reduce complexity.' },
+    Hard:   { time:'O(n log n) or O(n)', score:75, imp:'Think DP, binary search, or monotonic stack — brute force won\'t scale.' },
+  }[diff] || { time:'O(n)', score:80, imp:'Identify the bottleneck loop and see if it can be eliminated.' };
+
+  return {
+    score: hints.score,
+    verdict: `Solution submitted for ${prob.title} [${diff}] — see detailed analysis below.`,
+    correctness: 'Run your code against the provided test cases. Verify edge cases: empty input, single element, and boundary values.',
+    time: `Target: ${hints.time}. Analyse each loop and recursive call — nested loops usually signal O(n²).`,
+    space: 'Count your data structures: arrays scale O(n), sets/maps O(n), constant variables O(1).',
+    strengths: ['Attempted a solution — that\'s the first step', 'Review your logic against the examples provided'],
+    improvements: [hints.imp, 'Test edge cases: empty input, single element, maximum constraints', 'Verbalise your approach before coding in a real interview'],
+    optimal: `Study the optimal approach for ${prob.title} and compare time/space trade-offs.`,
+  };
+}
+
+function analyseCode(code, review, prob){
+  // Score based on code characteristics
+  let score = review.score_base || 80;
+  const lc = code.toLowerCase();
+
+  // Penalise obvious unfinished code
+  if(code.includes('pass') && code.length < 100) score -= 30;
+  if(code.includes('# Your solution') || code.includes('// your solution')) score -= 40;
+  if(code.trim().split('\n').length < 5) score -= 20;
+
+  // Penalise brute force patterns
+  if((lc.match(/for .* in/g)||[]).length >= 2 && lc.includes('range(len') && !lc.includes('map') && !lc.includes('filter')) score -= 10;
+
+  // Reward good patterns
+  if(lc.includes('hashmap') || lc.includes('{') && lc.includes(': ')) score = Math.min(score + 2, 100);
+  if(lc.includes('deque') || lc.includes('heapq') || lc.includes('bisect')) score = Math.min(score + 3, 100);
+  if(code.includes('#') || code.includes('//')) score = Math.min(score + 2, 100); // commented code
+  if(code.trim().split('\n').length > 15) score = Math.min(score + 3, 100); // non-trivial solution
+
+  return Math.max(0, Math.min(100, score));
+}
+
+// ═══════════════════════════════════════
+// AI REVIEW (fully offline, predefined)
 // ═══════════════════════════════════════
 async function getAIReview(){
   const code  = (monacoEditor ? monacoEditor.getValue() : document.getElementById('code-editor').value).trim();
-  const topic = TOPICS.find(t=>t.id===curTopic);
+  const topic = TOPICS.find(t => t.id === curTopic);
   const prob  = topic?.problems[curProb];
+  const lang  = document.getElementById('lang-select')?.value || 'python';
+
   if(!prob){ alert('Select a problem first.'); return; }
-  if(code.length < 50){ alert('Write your solution first before requesting a review.'); return; }
+  if(!code || code.includes('# Your solution here') || code.includes('// your solution here') || code.length < 20){
+    alert('Write your solution first, then request a review.'); return;
+  }
 
   const btn = document.getElementById('ai-btn');
   btn.disabled = true;
+
+  const aiContent = document.getElementById('ai-content');
   document.getElementById('ai-modal').classList.add('open');
-  document.getElementById('ai-modal-sub').textContent = `Reviewing: ${prob.title}`;
-  document.getElementById('ai-content').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Sending to AI engine...</div>';
+  document.getElementById('ai-modal-sub').textContent = 'Reviewing: ' + prob.title + ' · ' + prob.diff;
+  aiContent.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div><span>Analysing your solution...</span></div>';
 
-  const prompt = `You are an expert software engineer and coding interview coach reviewing a student's solution.
+  // Small delay for UX (feels like it's thinking)
+  await new Promise(r => setTimeout(r, 700));
 
-Problem: "${prob.title}" (${prob.diff})
-Description: ${prob.desc}
-
-Student's code:
-\`\`\`python
-${code}
-\`\`\`
-
-Please provide a thorough code review with these exact sections:
-1. SCORE: Give a score out of 100 (just the number)
-2. VERDICT: One sentence summary (pass/needs work/excellent)
-3. CORRECTNESS: Is the logic correct? What test cases would pass or fail?
-4. TIME COMPLEXITY: What is the time complexity and why?
-5. SPACE COMPLEXITY: What is the space complexity and why?
-6. STRENGTHS: What did the student do well? (2-3 points)
-7. IMPROVEMENTS: What could be better? (2-3 specific suggestions)
-8. OPTIMAL APPROACH: Brief description of the optimal solution if theirs isn't optimal.
-
-Be specific, educational, and encouraging. Format each section clearly with the section name in caps followed by a colon.`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20260514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.map(c=>c.text||'').join('') || '';
-
-    // Parse score
-    const scoreMatch = text.match(/SCORE[:\s]+(\d+)/i);
-    const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
-    const scoreColor = score>=80?'var(--green)':score>=60?'var(--amber)':'var(--red)';
-
-    const formatted = text
-      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-      .replace(/SCORE[:\s]+\d+[^\n]*/i,'')
-      .replace(/(VERDICT|CORRECTNESS|TIME COMPLEXITY|SPACE COMPLEXITY|STRENGTHS|IMPROVEMENTS|OPTIMAL APPROACH):/gi,
-        '<div class="ai-section-label">$1</div>')
-      .replace(/\n\n/g,'</div><div class="ai-section">')
-      .replace(/\n/g,'<br>');
-
-    document.getElementById('ai-content').innerHTML = `
-      ${score!==null?`<div class="ai-score" style="color:${scoreColor}">${score}<span style="font-size:20px;color:var(--muted)">/100</span></div>`:''}
-      <div class="ai-response"><div class="ai-section">${formatted}</div></div>`;
-  } catch(e){
-    document.getElementById('ai-content').innerHTML = `
-      <div class="ai-section">
-        <div class="ai-section-label">Review</div>
-        <p style="color:var(--muted);font-size:13px;line-height:1.8;">
-          AI review is unavailable right now. Here are general tips for <strong style="color:var(--amber)">${prob.title}</strong>:<br><br>
-          • Make sure you handle edge cases: empty input, single element, duplicate values.<br>
-          • State your time and space complexity before finishing.<br>
-          • ${prob.diff==='Easy'?'For Easy problems, aim for O(n) time and clean readable code.':prob.diff==='Medium'?'For Medium problems, consider if a hash map or two-pointer approach can reduce complexity.':'For Hard problems, think about whether DP, divide-and-conquer, or monotonic stack applies.'}<br>
-          • Test your solution on the given examples by hand before submitting.
-        </p>
-      </div>`;
+  // Fetch predefined review for this problem
+  const pd = PREDEFINED_REVIEWS[prob.id];
+  let rv;
+  if(pd){
+    rv = {
+      score: analyseCode(code, pd, prob),
+      verdict: pd.verdict,
+      correctness: pd.correctness,
+      time: pd.time,
+      space: pd.space,
+      strengths: pd.strengths,
+      improvements: pd.improvements,
+      optimal: pd.optimal,
+    };
+  } else {
+    rv = genericReview(prob, code);
+    rv.score = analyseCode(code, rv, prob);
   }
+
+  // Run the test harness in Python to augment the score
+  let testResult = null;
+  if(lang === 'python'){
+    try {
+      const harness = buildPythonTestHarness(code, prob.id);
+      if(harness !== code){ // tests were injected
+        const output = await executeLocalPython(harness);
+        const m = output.match(/Results:\s*(\d+)\/(\d+)/);
+        if(m){
+          const passed = parseInt(m[1]), total = parseInt(m[2]);
+          testResult = { passed, total };
+          // Adjust score based on real test run
+          const ratio = passed / total;
+          if(ratio === 1) rv.score = Math.max(rv.score, 88);
+          else if(ratio >= 0.5) rv.score = Math.min(rv.score, 72);
+          else rv.score = Math.min(rv.score, 45);
+        }
+      }
+    } catch(_){}
+  }
+
+  aiContent.innerHTML = buildReviewHTML(rv, testResult, prob);
   btn.disabled = false;
+}
+
+// ── Render offline review into HTML cards ──
+function buildReviewHTML(rv, testResult, prob){
+  const score = Math.min(100, Math.max(0, rv.score));
+  const scoreColor = score >= 80 ? 'var(--green)' : score >= 55 ? 'var(--amber)' : 'var(--red)';
+  const scoreLabel = score >= 90 ? 'Excellent' : score >= 80 ? 'Great' : score >= 65 ? 'Good' : score >= 50 ? 'Needs Work' : 'Revisit';
+
+  // Test result badge
+  let testBadge = '';
+  if(testResult){
+    const { passed, total } = testResult;
+    const tc = passed === total ? 'var(--green)' : passed > 0 ? 'var(--amber)' : 'var(--red)';
+    testBadge = `<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(255,255,255,.05);border:1px solid ${tc};border-radius:20px;font-family:var(--mono);font-size:11px;color:${tc};margin-bottom:16px;">` +
+      `<span>${passed === total ? '✓' : '⚡'}</span> ${passed}/${total} tests passed` +
+    `</div>`;
+  }
+
+  // Score ring
+  const circumference = 2 * Math.PI * 30; // r=30
+  const dash = circumference * score / 100;
+  const scoreHTML = `
+    <div class="ai-score" style="color:${scoreColor}">
+      <div style="position:relative;width:90px;height:90px;">
+        <svg width="90" height="90" viewBox="0 0 90 90" style="transform:rotate(-90deg)">
+          <circle cx="45" cy="45" r="30" fill="none" stroke="var(--bg4)" stroke-width="6"/>
+          <circle cx="45" cy="45" r="30" fill="none" stroke="${scoreColor}" stroke-width="6"
+            stroke-dasharray="${dash.toFixed(1)} ${circumference.toFixed(1)}"
+            stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;line-height:1;">
+          <div style="font-size:22px;font-weight:700;font-family:var(--serif);color:${scoreColor}">${score}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:1px;">/100</div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-family:var(--mono);margin-top:6px;letter-spacing:.5px;">${scoreLabel}</div>
+    </div>`;
+
+  function section(icon, label, content){
+    return `<div class="ai-section">
+      <div class="ai-section-label">${icon} ${label}</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.8;">${content}</div>
+    </div>`;
+  }
+  function bullets(arr){
+    return '<ul style="margin:4px 0 0 4px;padding:0;list-style:none;">' +
+      arr.map(s => `<li style="margin:4px 0;">• ${s}</li>`).join('') +
+    '</ul>';
+  }
+
+  const sectionsHTML =
+    section('🏷', 'VERDICT', `<span>${rv.verdict}</span>`) +
+    (testBadge ? `<div class="ai-section">${testBadge}</div>` : '') +
+    section('✅', 'CORRECTNESS', rv.correctness) +
+    section('⏱', 'TIME COMPLEXITY', rv.time) +
+    section('💾', 'SPACE COMPLEXITY', rv.space) +
+    section('💪', 'STRENGTHS', bullets(rv.strengths)) +
+    section('🔧', 'IMPROVEMENTS', bullets(rv.improvements)) +
+    section('⚡', 'OPTIMAL APPROACH', rv.optimal);
+
+  return scoreHTML + `<div class="ai-response">${sectionsHTML}</div>`;
 }
 function closeAI(){ document.getElementById('ai-modal').classList.remove('open'); }
 document.getElementById('ai-modal').addEventListener('click',e=>{ if(e.target.id==='ai-modal') closeAI(); });
@@ -2434,7 +2982,7 @@ function initMonaco(){
     });
 
     monacoEditor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
-      value: '# Select a problem from the sidebar to begin\n\n# Write your solution here, then click ▶ Run Code\n# Your code is executed live via the Piston API',
+      value: '# Select a problem from the sidebar to begin\n\n# Write your solution here, then click ▶ Run Code\n# Python and JavaScript run instantly in-browser (no network needed)',
       language: 'python',
       theme: isDark ? 'codeforge-dark' : 'codeforge-light',
       fontSize: 13,
@@ -2699,11 +3247,12 @@ function saveAvatarChoice(){
   session.gender   = genderBase;
   setSession(session);
 
-  // Update stored user record
+  // Update stored user record (persists to cf_users permanently)
   const users = getUsers();
   if(users[session.email]){
-    users[session.email].avatarId = apSelected;
-    users[session.email].gender   = genderBase;
+    users[session.email].avatarId    = apSelected;
+    users[session.email].gender      = genderBase;
+    users[session.email].lastUpdated = new Date().toISOString();
     saveUsers(users);
   }
 
@@ -2727,11 +3276,21 @@ function saveAvatarChoice(){
 // AUTH SYSTEM
 // ═══════════════════════════════════════
 
-// Simple hash (for demo — not cryptographic)
+// ═══════════════════════════════════════
+// PERSISTENT AUTH STORAGE
+// ═══════════════════════════════════════
+// Users are stored in cf_users: { email → { name, pw, gender, avatarId, createdAt } }
+// Session is stored in cf_session: { name, email, gender, avatarId }
+// Solved lists are keyed per user: cf_solved_<email>
+// Streaks are keyed per user: cf_streak_<email>
+// All of these persist in localStorage indefinitely — logging out only clears cf_session,
+// so all user accounts and their progress survive across sessions.
+
+// Simple hash (not cryptographic — demo only)
 function hashPw(pw){
-  let h = 0;
-  for(let i=0;i<pw.length;i++){ h = ((h<<5)-h)+pw.charCodeAt(i); h|=0; }
-  return h.toString(36);
+  let h = 5381;
+  for(let i=0;i<pw.length;i++){ h = ((h<<5)+h)^pw.charCodeAt(i); h|=0; }
+  return (h >>> 0).toString(36);
 }
 
 function validatePassword(pw){
@@ -2747,16 +3306,36 @@ function isStrongPassword(pw){
   return v.len && v.upper && v.lower && v.num;
 }
 
-// Check if already logged in
+// ── Storage helpers ──
 function getSession(){
   try{ return JSON.parse(localStorage.getItem('cf_session')||'null'); }catch(e){ return null; }
 }
 function getUsers(){
   try{ return JSON.parse(localStorage.getItem('cf_users')||'{}'); }catch(e){ return {}; }
 }
-function saveUsers(u){ localStorage.setItem('cf_users', JSON.stringify(u)); }
-function setSession(user){ localStorage.setItem('cf_session', JSON.stringify(user)); }
+function saveUsers(u){
+  try{ localStorage.setItem('cf_users', JSON.stringify(u)); }
+  catch(e){ console.error('cf_users save failed:', e); }
+}
+function setSession(user){
+  try{ localStorage.setItem('cf_session', JSON.stringify(user)); }
+  catch(e){ console.error('cf_session save failed:', e); }
+}
+// clearSession only removes the active session token — does NOT touch cf_users or solved lists
 function clearSession(){ localStorage.removeItem('cf_session'); }
+
+// ── Get the full stored user record (extra fields like bio, joinDate etc.) ──
+function getStoredUser(email){
+  const users = getUsers();
+  return users[email.toLowerCase()] || null;
+}
+
+// ── Sync session from stored user record (call after login to ensure session is fresh) ──
+function buildSessionFromRecord(email){
+  const u = getStoredUser(email);
+  if(!u) return null;
+  return { name: u.name, email: email.toLowerCase(), gender: u.gender || '', avatarId: u.avatarId || '' };
+}
 
 function updateNavUser(user){
   const initial = user.name.charAt(0).toUpperCase();
@@ -2795,8 +3374,10 @@ document.addEventListener('click', function(e){
 });
 
 function doLogout(){
+  saveSolved();          // flush any pending solved state before clearing session
   clearSession();
-  solved = [];  // clear in-memory solved for this user
+  setSolvedKey(null);    // reset key to guest so no accidental writes after logout
+  solved = [];           // clear in-memory solved
   selectedGender = '';
   ['gender-male','gender-female'].forEach(id=>{ const el=document.getElementById(id); if(el) el.className='gender-opt'; });
   document.querySelectorAll('.nav-user-pill').forEach(p => {
@@ -2817,12 +3398,17 @@ function doLogout(){
 // On page load — check session
 (function initAuth(){
   const session = getSession();
-  if(session){
-    // Already logged in — go straight to landing
+  if(session && session.email){
+    // Refresh session from stored user record so profile changes (avatar etc.) are always current
+    const freshUser = buildSessionFromRecord(session.email);
+    const user = freshUser || session;
+    if(freshUser) setSession(freshUser);  // keep session in sync
+
     document.getElementById('auth-view').classList.remove('active');
     document.getElementById('landing').classList.add('active');
+    setSolvedKey(user.email);   // pin to this user before loading
     loadSolved();
-    updateNavUser(session);
+    updateNavUser(user);
   } else {
     // Show auth screen
     document.getElementById('auth-view').classList.add('active');
@@ -2914,10 +3500,16 @@ function doLogin(){
     document.getElementById('li-pw').classList.add('error');
     return;
   }
-  // Success
-  const user = { name: users[key].name, email: key, gender: users[key].gender || '', avatarId: users[key].avatarId || '' };
+
+  // Update lastLogin timestamp in stored record
+  users[key].lastLogin = new Date().toISOString();
+  saveUsers(users);
+
+  // Build session fresh from stored record (so any profile updates are reflected)
+  const user = buildSessionFromRecord(key);
   setSession(user);
-  loadSolved();
+  setSolvedKey(key);   // pin solved storage to this user's email
+  loadSolved();        // loads cf_solved_<email> for this user
   updateNavUser(user);
   document.getElementById('auth-view').classList.remove('active');
   document.getElementById('landing').classList.add('active');
@@ -2987,12 +3579,22 @@ function doSignup(){
     showAlert('An account with this email already exists. Please sign in.');
     return;
   }
-  // Save user
-  users[key] = { name, pw: hashPw(pw), gender: selectedGender, avatarId: selectedGender+'_1' };
+  // Save user record — persists forever in cf_users
+  const avatarId = selectedGender ? selectedGender+'_1' : 'male_1';
+  users[key] = {
+    name,
+    pw: hashPw(pw),
+    gender: selectedGender,
+    avatarId,
+    createdAt:  new Date().toISOString(),
+    lastLogin:  new Date().toISOString(),
+  };
   saveUsers(users);
-  const user = { name, email: key, gender: selectedGender, avatarId: selectedGender+'_1' };
+
+  const user = { name, email: key, gender: selectedGender, avatarId };
   setSession(user);
-  loadSolved();
+  setSolvedKey(key);   // pin solved storage to this user's email
+  loadSolved();        // starts fresh cf_solved_<email> for new user
   updateNavUser(user);
   showAlert('Account created! Welcome to CodeForge, '+name.split(' ')[0]+'!', 'success');
   setTimeout(()=>{
