@@ -1,0 +1,3725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeForge — Master the Coding Interview</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css">
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"></script>
+<style>
+:root {
+  --bg:       #141210;
+  --bg2:      #1a1815;
+  --bg3:      #201e1a;
+  --bg4:      #272420;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --text:     #f0ebe3;
+  --muted:    #8a8178;
+  --muted2:   #5a5450;
+  --amber:    #f59e0b;
+  --amber2:   #fbbf24;
+  --amber-bg: rgba(245,158,11,0.1);
+  --green:    #10b981;
+  --green-bg: rgba(16,185,129,0.1);
+  --red:      #ef4444;
+  --red-bg:   rgba(239,68,68,0.1);
+  --blue:     #3b82f6;
+  --blue-bg:  rgba(59,130,246,0.1);
+  --orange:   #f97316;
+  --mono:     'DM Mono', monospace;
+  --sans:     'Manrope', sans-serif;
+  --serif:    'Fraunces', serif;
+  --r:        10px;
+  --r-lg:     16px;
+  --sh:       0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+  --sh-lg:    0 8px 32px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.4);
+}
+
+/* ── LIGHT MODE ── */
+body.light {
+  --bg:       #fafaf8;
+  --bg2:      #ffffff;
+  --bg3:      #f3f2ef;
+  --bg4:      #eae9e5;
+  --border:   rgba(0,0,0,0.08);
+  --border2:  rgba(0,0,0,0.14);
+  --text:     #1a1916;
+  --muted:    #6b6760;
+  --muted2:   #a09d98;
+  --amber-bg: rgba(245,158,11,0.12);
+  --green-bg: rgba(16,185,129,0.1);
+  --red-bg:   rgba(239,68,68,0.1);
+  --blue-bg:  rgba(59,130,246,0.1);
+  --sh:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --sh-lg:    0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.08);
+}
+body{ transition: background .3s, color .3s; }
+*{ transition: background-color .25s, border-color .25s, color .2s; }
+.code-editor{ transition: none !important; }
+
+/* ── STREAK BANNER ── */
+.streak-banner{
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(249,115,22,.08));
+  border:1px solid rgba(245,158,11,.2);
+  border-radius:100px;padding:5px 14px;
+  font-family:var(--mono);font-size:12px;color:var(--amber);
+  cursor:default;
+}
+.streak-fire{font-size:14px;}
+
+/* ── TIMER ── */
+.timer-wrap{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:7px 14px;
+}
+.timer-display{
+  font-family:var(--mono);font-size:14px;font-weight:500;
+  color:var(--text);min-width:52px;
+}
+.timer-display.warning{color:var(--amber);}
+.timer-display.danger{color:var(--red);}
+.timer-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:13px;padding:0 2px;transition:color .2s;
+}
+.timer-btn:hover{color:var(--text);}
+
+/* ── NOTES PANEL ── */
+.notes-panel{
+  border-top:1px solid var(--border);
+  background:var(--bg3);flex-shrink:0;
+}
+.notes-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 16px;cursor:pointer;
+  border-bottom:1px solid transparent;transition:border-color .2s;
+}
+.notes-head:hover{border-bottom-color:var(--border);}
+.notes-head-left{display:flex;align-items:center;gap:8px;}
+.notes-label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.notes-saved{font-size:10px;color:var(--green);opacity:0;transition:opacity .3s;}
+.notes-saved.show{opacity:1;}
+.notes-toggle-icon{font-size:11px;color:var(--muted2);transition:transform .2s;}
+.notes-toggle-icon.open{transform:rotate(180deg);}
+.notes-body{display:none;padding:12px 16px;}
+.notes-body.open{display:block;}
+.notes-textarea{
+  width:100%;background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:12px;
+  font-family:var(--mono);font-size:12px;color:var(--text);
+  line-height:1.7;resize:none;height:100px;outline:none;
+  transition:border-color .2s;
+}
+.notes-textarea:focus{border-color:var(--amber);}
+.notes-save-btn{
+  margin-top:8px;padding:7px 16px;
+  background:var(--amber);color:var(--bg);
+  border:none;border-radius:7px;font-size:12px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.notes-save-btn:hover{background:var(--amber2);}
+
+/* ── HINTS ── */
+.hint-btn{
+  background:rgba(59,130,246,.1);color:var(--blue);
+  border:1px solid rgba(59,130,246,.2);
+  padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:6px;
+}
+.hint-btn:hover{background:rgba(59,130,246,.18);}
+.hint-panel{
+  margin:12px 16px 0;padding:14px;
+  background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.15);
+  border-radius:10px;display:none;animation:fadeUp .3s ease;
+}
+.hint-panel.show{display:block;}
+.hint-num{font-family:var(--mono);font-size:10px;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.hint-text{font-size:13px;color:var(--muted);line-height:1.7;}
+.hint-next{
+  margin-top:10px;font-size:12px;color:var(--blue);
+  background:none;border:none;cursor:pointer;font-family:var(--sans);
+  font-weight:600;transition:opacity .2s;padding:0;
+}
+.hint-next:hover{opacity:.7;}
+
+/* ── SEARCH ── */
+.search-wrap{padding:10px 12px;border-bottom:1px solid var(--border);}
+.search-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:9px 12px 9px 32px;
+  font-size:13px;color:var(--text);font-family:var(--sans);
+  outline:none;transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--amber);}
+.search-wrap-inner{position:relative;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted2);}
+
+/* ── DIFFICULTY FILTER ── */
+.diff-filter{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 12px 10px;border-bottom:1px solid var(--border);
+}
+.diff-filter-label{font-size:11px;color:var(--muted2);font-family:var(--mono);margin-right:2px;flex-shrink:0;}
+.diff-btn{
+  flex:1;border:1px solid var(--border);background:var(--bg3);
+  border-radius:20px;padding:4px 0;font-size:11px;font-weight:600;
+  font-family:var(--mono);cursor:pointer;transition:all .2s;
+  color:var(--muted);
+}
+.diff-btn:hover{border-color:var(--muted);color:var(--text);}
+.diff-btn.active-easy{background:rgba(16,185,129,.12);border-color:var(--green);color:var(--green);}
+.diff-btn.active-medium{background:rgba(245,158,11,.12);border-color:var(--amber);color:var(--amber);}
+.diff-btn.active-hard{background:rgba(239,68,68,.12);border-color:var(--red);color:var(--red);}
+
+/* ── PROFILE VIEW ── */
+#profile-view{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+#profile-view.open{display:flex;animation:fadeIn .2s ease;}
+.profile-card{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:40px;max-width:520px;width:92%;box-shadow:var(--sh-lg);position:relative;max-height:90vh;overflow-y:auto;}
+.profile-close{position:absolute;top:14px;right:14px;background:var(--bg3);border:1px solid var(--border);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s;}
+.profile-close:hover{color:var(--text);}
+
+/* ── EDIT PROFILE / AVATAR PICKER ── */
+.edit-profile-btn{
+  display:flex;align-items:center;gap:6px;
+  margin-top:10px;padding:7px 16px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.edit-profile-btn:hover{border-color:var(--amber);color:var(--amber);}
+
+.avatar-picker-panel{
+  display:none;margin-top:20px;padding:18px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:14px;animation:fadeUp .25s ease;
+}
+.avatar-picker-panel.open{display:block;}
+.ap-title{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;}
+.ap-gender-row{display:flex;gap:8px;margin-bottom:16px;}
+.ap-gender-btn{
+  flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg4);font-size:12px;font-weight:600;font-family:var(--sans);
+  color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.ap-gender-btn.active-m{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);}
+.ap-gender-btn.active-f{border-color:#ec4899;background:rgba(236,72,153,.1);color:#ec4899;}
+.ap-section-lbl{font-size:11px;color:var(--muted2);font-family:var(--mono);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;}
+.ap-avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.ap-avatar-opt{
+  border-radius:12px;border:2px solid var(--border);
+  background:var(--bg2);cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:10px 6px 8px;
+}
+.ap-avatar-opt:hover{border-color:var(--amber);transform:translateY(-2px);}
+.ap-avatar-opt.selected{border-color:var(--amber);background:var(--amber-bg);box-shadow:0 0 0 3px rgba(245,158,11,.15);}
+.ap-avatar-opt svg{display:block;}
+.ap-avatar-lbl{font-size:9px;font-family:var(--mono);color:var(--muted2);text-align:center;}
+.ap-save-row{display:flex;gap:8px;margin-top:4px;}
+.ap-save-btn{
+  flex:1;padding:10px;background:var(--amber);color:var(--bg);
+  border:none;border-radius:8px;font-size:13px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.ap-save-btn:hover{background:var(--amber2);}
+.ap-cancel-btn{
+  padding:10px 16px;background:var(--bg4);color:var(--muted);
+  border:1px solid var(--border);border-radius:8px;font-size:13px;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.ap-cancel-btn:hover{color:var(--text);}
+.profile-avatar-lg{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--amber),var(--orange));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:28px;font-weight:600;color:var(--bg);margin-bottom:16px;box-shadow:0 0 32px rgba(245,158,11,.3);}
+.profile-name{font-family:var(--serif);font-size:24px;font-weight:300;letter-spacing:-.5px;margin-bottom:4px;}
+.profile-email{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:24px;}
+.profile-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.profile-stat{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.profile-stat-n{font-family:var(--serif);font-size:28px;font-weight:300;}
+.profile-stat-l{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);}
+.profile-section-title{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;}
+.profile-topic-bars{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.ptb-row{display:flex;align-items:center;gap:10px;}
+.ptb-label{font-size:12px;color:var(--muted);min-width:110px;}
+.ptb-bar-wrap{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.ptb-bar-fill{height:100%;border-radius:3px;background:var(--amber);transition:width .6s ease;}
+.ptb-pct{font-family:var(--mono);font-size:10px;color:var(--muted2);min-width:28px;text-align:right;}
+.export-btn{width:100%;padding:12px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:9px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.export-btn:hover{background:var(--amber);color:var(--bg);border-color:var(--amber);}
+
+/* ── CONFETTI ── */
+.confetti-piece{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:9999;animation:confetti-fall linear forwards;}
+@keyframes confetti-fall{0%{opacity:1;transform:translateY(-20px) rotate(0deg);}100%{opacity:0;transform:translateY(100vh) rotate(720deg);}}
+
+/* ── KEYBOARD SHORTCUT TOAST ── */
+.shortcut-toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:10px;padding:10px 18px;
+  font-family:var(--mono);font-size:12px;color:var(--muted);
+  box-shadow:var(--sh-lg);opacity:0;transition:all .3s;z-index:400;
+  white-space:nowrap;pointer-events:none;
+}
+.shortcut-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+kbd{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--text);}
+
+/* ── THEME TOGGLE BTN ── */
+.theme-toggle{
+  background:var(--bg3);border:1px solid var(--border);
+  width:34px;height:34px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;transition:all .2s;flex-shrink:0;
+}
+.theme-toggle:hover{border-color:var(--border2);}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:hidden;font-size:14px;}
+
+/* ── VIEWS ── */
+.view{display:none;}
+.view.active{display:flex;flex-direction:column;min-height:100vh;}
+
+/* ════════════════════════════
+   AUTH (LOGIN / SIGNUP)
+════════════════════════════ */
+#auth-view{
+  display:none;min-height:100vh;
+  align-items:center;justify-content:center;
+  background:var(--bg);position:relative;overflow:hidden;
+}
+#auth-view.active{display:flex;}
+.auth-mesh{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 30% 40%,rgba(245,158,11,.07) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 50% at 80% 70%,rgba(16,185,129,.05) 0%,transparent 60%);
+}
+.auth-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 80%);
+}
+.auth-card{
+  position:relative;z-index:1;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:20px;padding:44px 40px;
+  width:100%;max-width:420px;
+  box-shadow:var(--sh-lg);
+  animation:fadeUp .4s ease both;
+}
+.auth-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:32px;}
+.auth-logo-icon{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,var(--amber),var(--orange));
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:16px;color:#fff;
+  box-shadow:0 0 24px rgba(245,158,11,.35);
+}
+.auth-logo-text{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.3px;}
+.auth-logo-text span{font-style:italic;color:var(--amber);}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:10px;padding:4px;margin-bottom:28px;}
+.auth-tab{
+  flex:1;padding:9px;border-radius:8px;border:none;background:none;
+  font-family:var(--sans);font-size:13px;font-weight:500;
+  color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.auth-tab.active{background:var(--bg2);color:var(--text);box-shadow:var(--sh);}
+.auth-title{font-family:var(--serif);font-size:22px;font-weight:300;letter-spacing:-.5px;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.auth-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.auth-field label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+.auth-input-wrap{position:relative;}
+.auth-field input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:9px;padding:12px 40px 12px 14px;
+  font-size:14px;color:var(--text);font-family:var(--sans);
+  outline:none;transition:border-color .2s;
+}
+.auth-field input:focus{border-color:var(--amber);}
+.auth-field input.error{border-color:var(--red);}
+.auth-field input.valid{border-color:var(--green);}
+.pw-toggle{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:14px;transition:color .2s;padding:2px;
+}
+.pw-toggle:hover{color:var(--text);}
+.auth-err{font-size:12px;color:var(--red);margin-top:4px;display:none;}
+.auth-err.show{display:block;}
+/* Password strength */
+.pw-strength{margin-top:8px;display:none;}
+.pw-strength.show{display:block;}
+.pw-strength.show{display:block;}
+.pw-strength-bar{display:flex;gap:4px;margin-bottom:6px;}
+.pw-bar-seg{flex:1;height:3px;border-radius:2px;background:var(--bg4);transition:background .3s;}
+.pw-strength-label{font-family:var(--mono);font-size:10px;color:var(--muted);}
+/* Requirements checklist */
+.pw-reqs{display:none;margin-top:10px;display:flex;flex-direction:column;gap:5px;}
+.pw-req{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--muted2);transition:color .2s;}
+.pw-req.met{color:var(--green);}
+.pw-req-dot{width:6px;height:6px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:background .2s;}
+.pw-req.met .pw-req-dot{background:var(--green);}
+/* Divider */
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;}
+.auth-divider-line{flex:1;height:1px;background:var(--border);}
+.auth-divider-text{font-size:11px;color:var(--muted2);font-family:var(--mono);}
+/* Submit */
+.auth-submit{
+  width:100%;padding:13px;background:var(--amber);color:var(--bg);
+  border:none;border-radius:9px;font-size:14px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;margin-top:4px;
+  box-shadow:0 0 24px rgba(245,158,11,.25);
+}
+.auth-submit:hover{background:var(--amber2);transform:translateY(-1px);}
+.auth-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+/* Global auth error */
+.auth-alert{
+  display:none;padding:12px 16px;border-radius:9px;
+  font-size:13px;margin-bottom:16px;
+}
+.auth-alert.show{display:block;}
+.auth-alert.error{background:var(--red-bg);border:1px solid rgba(239,68,68,.25);color:var(--red);}
+.auth-alert.success{background:var(--green-bg);border:1px solid rgba(16,185,129,.25);color:var(--green);}
+/* User pill in nav */
+.nav-user{display:flex;align-items:center;gap:10px;}
+.nav-user-pill{
+  display:none;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:100px;padding:5px 10px 5px 6px;
+  cursor:pointer;position:relative;
+  transition:border-color .2s, background .2s;
+  user-select:none;
+}
+.nav-user-pill:hover{ border-color:var(--amber); background:var(--bg4); }
+.nav-user-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--amber),var(--orange));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;font-family:var(--mono);
+  flex-shrink:0;overflow:hidden;
+}
+.nav-user-avatar svg{ width:32px;height:32px;display:block; }
+
+/* Gender picker on signup */
+.gender-picker{display:flex;gap:10px;margin-top:2px;}
+.gender-opt{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 12px;border-radius:9px;border:1px solid var(--border);
+  background:var(--bg3);cursor:pointer;transition:all .2s;
+  font-size:13px;font-weight:500;color:var(--muted);font-family:var(--sans);
+  user-select:none;
+}
+.gender-opt:hover{border-color:var(--border2);color:var(--text);}
+.gender-opt.selected-male{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);}
+.gender-opt.selected-female{border-color:#ec4899;background:rgba(236,72,153,.1);color:#ec4899;}
+.gender-opt svg{width:22px;height:22px;flex-shrink:0;}
+.nav-user-name{font-size:13px;font-weight:500;color:var(--text);}
+.nav-user-caret{
+  font-size:10px;color:var(--muted);margin-left:2px;
+  transition:transform .2s;display:inline-block;
+}
+.nav-user-pill.open .nav-user-caret{ transform:rotate(180deg); }
+
+/* Dropdown */
+.nav-dropdown{
+  display:none;position:absolute;top:calc(100% + 10px);right:0;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:12px;min-width:200px;z-index:200;
+  box-shadow:0 8px 32px rgba(0,0,0,.35);overflow:hidden;
+  animation:dropIn .15s ease;
+}
+@keyframes dropIn{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.nav-user-pill.open .nav-dropdown{ display:block; }
+.nd-header{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.nd-header-name{ font-size:14px;font-weight:600;color:var(--text); }
+.nd-header-email{ font-size:11px;color:var(--muted);margin-top:2px; font-family:var(--mono);}
+.nd-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;font-size:13px;color:var(--text);
+  cursor:pointer;transition:background .15s;text-decoration:none;
+  border:none;background:none;width:100%;text-align:left;font-family:var(--sans);
+}
+.nd-item:hover{ background:var(--bg3); }
+.nd-item-icon{ font-size:15px;width:20px;text-align:center;flex-shrink:0; }
+.nd-sep{ height:1px;background:var(--border);margin:4px 0; }
+.nd-logout{ color:var(--red) !important; }
+.nd-logout:hover{ background:rgba(239,68,68,.08) !important; }
+
+.nav-logout{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  padding:6px 12px;border-radius:7px;font-size:12px;font-family:var(--sans);
+  cursor:pointer;transition:all .2s;
+}
+.nav-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* ════════════════════════════
+   SHARED NAV
+════════════════════════════ */
+.topnav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 48px;
+  background:rgba(20,18,16,0.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;}
+.nav-logo-icon{
+  width:34px;height:34px;
+  background:linear-gradient(135deg,var(--amber),var(--orange));
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:15px;font-weight:500;color:#fff;
+  box-shadow:0 0 20px rgba(245,158,11,.3);
+}
+.nav-logo-text{font-family:var(--serif);font-size:18px;font-weight:600;letter-spacing:-.3px;}
+.nav-logo-text span{font-style:italic;color:var(--amber);}
+.nav-links{display:flex;align-items:center;gap:28px;list-style:none;}
+.nav-links a{font-size:13px;color:var(--muted);text-decoration:none;font-weight:400;transition:color .2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{
+  background:var(--amber);color:var(--bg);border:none;
+  padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+  box-shadow:0 0 20px rgba(245,158,11,.25);
+}
+.nav-cta:hover{background:var(--amber2);transform:translateY(-1px);}
+.hbg{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
+.hbg span{display:block;width:22px;height:1.5px;background:var(--text);transition:all .3s;}
+.mob-nav{
+  display:none;position:fixed;top:67px;left:0;right:0;z-index:99;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:20px 32px;flex-direction:column;gap:16px;
+}
+.mob-nav.open{display:flex;}
+.mob-nav a{font-size:15px;color:var(--muted);text-decoration:none;}
+
+/* ════════════════════════════
+   LANDING
+════════════════════════════ */
+/* Hero */
+.hero{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:90px 48px 60px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero-mesh{
+  position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(245,158,11,.08) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 40% at 85% 70%,rgba(16,185,129,.05) 0%,transparent 55%),
+    radial-gradient(ellipse 40% 40% at 15% 80%,rgba(59,130,246,.04) 0%,transparent 55%);
+}
+.hero-grid{
+  position:absolute;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 40%,black 20%,transparent 80%);
+}
+.hero-inner{position:relative;z-index:1;max-width:800px;}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.08);
+  border-radius:100px;padding:6px 16px;
+  font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:.5px;
+  margin-bottom:28px;animation:fadeUp .5s ease both;
+}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--amber);border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{
+  font-family:var(--serif);
+  font-size:clamp(48px,8vw,92px);
+  font-weight:300;line-height:1.0;letter-spacing:-3px;
+  margin-bottom:20px;animation:fadeUp .5s .08s ease both;
+}
+.hero h1 em{font-style:italic;color:var(--amber);}
+.hero h1 strong{font-weight:700;}
+.hero-sub{
+  font-size:17px;color:var(--muted);line-height:1.75;
+  max-width:520px;margin:0 auto 36px;font-weight:300;
+  animation:fadeUp .5s .15s ease both;
+}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:fadeUp .5s .22s ease both;}
+.btn-amber{
+  background:var(--amber);color:var(--bg);border:none;
+  padding:14px 30px;border-radius:var(--r);font-size:14px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+  box-shadow:0 0 30px rgba(245,158,11,.3);
+}
+.btn-amber:hover{background:var(--amber2);transform:translateY(-2px);box-shadow:0 0 40px rgba(245,158,11,.45);}
+.btn-ghost{
+  background:rgba(255,255,255,.05);color:var(--text);
+  border:1px solid var(--border2);
+  padding:14px 30px;border-radius:var(--r);font-size:14px;font-weight:500;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.btn-ghost:hover{background:rgba(255,255,255,.09);border-color:var(--border2);}
+.hero-terminal{
+  margin:52px auto 0;max-width:580px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-lg);overflow:hidden;
+  box-shadow:var(--sh-lg);animation:fadeUp .5s .3s ease both;
+  text-align:left;
+}
+.terminal-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);
+}
+.t-dot{width:12px;height:12px;border-radius:50%;}
+.t-title{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto;}
+.terminal-body{padding:20px;font-family:var(--mono);font-size:13px;line-height:1.8;}
+.t-comment{color:var(--muted2);}
+.t-keyword{color:var(--amber);}
+.t-fn{color:var(--green);}
+.t-str{color:#a78bfa;}
+.t-num{color:var(--orange);}
+.t-cursor{display:inline-block;width:8px;height:14px;background:var(--amber);vertical-align:middle;animation:cursor-blink .8s infinite;}
+@keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Stats row */
+.hero-stats{
+  display:flex;align-items:center;justify-content:center;
+  gap:40px;margin-top:52px;flex-wrap:wrap;
+  animation:fadeUp .5s .35s ease both;
+}
+.h-stat{text-align:center;}
+.h-stat-n{font-family:var(--serif);font-size:36px;font-weight:300;color:var(--amber);}
+.h-stat-l{font-size:12px;color:var(--muted);margin-top:2px;}
+.h-div{width:1px;height:40px;background:var(--border);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* Section shared */
+.l-section{padding:88px 48px;max-width:1160px;margin:0 auto;width:100%;}
+.s-label{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.s-title{font-family:var(--serif);font-size:clamp(30px,4vw,50px);font-weight:300;letter-spacing:-1.5px;line-height:1.1;margin-bottom:14px;}
+.s-title em{font-style:italic;}
+.s-sub{font-size:15px;color:var(--muted);line-height:1.75;max-width:500px;font-weight:300;}
+.l-sep{border:none;border-top:1px solid var(--border);margin:0;}
+
+/* Features */
+.feat-wrap{margin-top:52px;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;}
+.feat{background:var(--bg2);padding:28px;transition:background .25s;}
+.feat:hover{background:var(--bg3);}
+.feat-icon{font-size:20px;margin-bottom:14px;}
+.feat h3{font-size:14px;font-weight:600;margin-bottom:7px;letter-spacing:-.2px;}
+.feat p{font-size:13px;color:var(--muted);line-height:1.65;}
+
+/* Topic gallery */
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:52px;}
+.topic-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:24px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  cursor:pointer;transition:all .25s;text-align:center;
+}
+.topic-card:hover{border-color:var(--amber);transform:translateY(-3px);box-shadow:0 0 20px rgba(245,158,11,.12);}
+.topic-card.done{border-color:var(--green);background:rgba(16,185,129,.05);}
+.topic-icon{font-size:26px;}
+.topic-name{font-size:13px;font-weight:600;letter-spacing:-.2px;}
+.topic-count{font-size:11px;color:var(--muted);font-family:var(--mono);}
+.topic-badge{font-size:10px;padding:2px 8px;border-radius:100px;font-weight:600;margin-top:2px;}
+
+/* Slideshow */
+.slideshow{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--bg2);margin-top:52px;}
+.slide{display:none;padding:52px;animation:slideIn .35s ease;}
+.slide.active{display:block;}
+@keyframes slideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
+.slide-num{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;}
+.slide-q{font-family:var(--serif);font-size:clamp(20px,2.5vw,30px);font-weight:300;letter-spacing:-.5px;line-height:1.3;margin-bottom:16px;}
+.slide-q em{font-style:italic;color:var(--amber);}
+.slide-d{font-size:14px;color:var(--muted);line-height:1.75;max-width:580px;font-weight:300;}
+.slide-controls{display:flex;align-items:center;gap:10px;padding:18px 52px;background:var(--bg3);border-top:1px solid var(--border);}
+.s-dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);cursor:pointer;border:none;transition:all .2s;}
+.s-dot.active{background:var(--amber);width:22px;border-radius:4px;}
+
+/* Lightbox */
+.lightbox{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+.lightbox.open{display:flex;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.lb-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:40px;max-width:540px;width:90%;position:relative;box-shadow:var(--sh-lg);}
+.lb-close{position:absolute;top:14px;right:14px;background:var(--bg3);border:1px solid var(--border);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s;}
+.lb-close:hover{color:var(--text);border-color:var(--border2);}
+.lb-icon{font-size:36px;margin-bottom:14px;}
+.lb-title{font-family:var(--serif);font-size:22px;font-weight:300;letter-spacing:-.5px;margin-bottom:8px;}
+.lb-tag{display:inline-block;font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:100px;font-weight:500;margin-bottom:14px;}
+.lb-desc{font-size:13px;color:var(--muted);line-height:1.75;font-weight:300;}
+
+/* Mood */
+.mood-row{display:flex;gap:10px;flex-wrap:wrap;margin:36px 0 20px;}
+.m-btn{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:18px 22px;border-radius:var(--r);min-width:88px;
+  border:1px solid var(--border);background:var(--bg2);
+  cursor:pointer;font-family:var(--sans);transition:all .2s;
+}
+.m-btn span:first-child{font-size:24px;}
+.m-btn span:last-child{font-size:11px;color:var(--muted);font-weight:400;}
+.m-btn:hover{border-color:var(--amber);transform:translateY(-2px);}
+.m-btn.active{border-color:var(--amber);background:var(--amber-bg);}
+.m-btn.active span:last-child{color:var(--amber);}
+#mood-msg{font-size:14px;color:var(--muted);min-height:22px;}
+
+/* Calculator */
+.calc-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:36px;margin-top:52px;}
+.calc-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.c-f{display:flex;flex-direction:column;gap:6px;}
+.c-f label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+.c-f input{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:11px 14px;font-size:15px;color:var(--text);font-family:var(--mono);
+  outline:none;transition:border-color .2s;
+}
+.c-f input:focus{border-color:var(--amber);}
+.calc-btn{
+  width:100%;padding:13px;background:var(--amber);color:var(--bg);
+  border:none;border-radius:8px;font-size:14px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.calc-btn:hover{background:var(--amber2);}
+.calc-result{display:none;margin-top:20px;padding:20px;background:var(--bg3);border-radius:10px;}
+.calc-result.show{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;animation:fadeUp .3s ease;}
+.c-met{text-align:center;}
+.c-met-n{font-family:var(--serif);font-size:34px;font-weight:300;}
+.c-met-l{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);}
+
+/* Form (landing) */
+.form-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:36px;margin-top:52px;}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.f-f{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.f-f label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+.f-f input,.f-f select,.f-f textarea{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:11px 14px;font-size:14px;color:var(--text);font-family:var(--sans);
+  outline:none;transition:border-color .2s;
+}
+.f-f input:focus,.f-f select:focus,.f-f textarea:focus{border-color:var(--amber);}
+.f-f select option{background:var(--bg2);}
+.f-f textarea{resize:vertical;min-height:80px;}
+.f-submit{
+  width:100%;padding:13px;background:var(--amber);color:var(--bg);
+  border:none;border-radius:8px;font-size:14px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.f-submit:hover{background:var(--amber2);}
+#f-ok{display:none;margin-top:14px;padding:14px 18px;background:var(--green-bg);border:1px solid rgba(16,185,129,.3);border-radius:8px;font-size:13px;color:var(--green);}
+
+/* Footer */
+.l-footer{border-top:1px solid var(--border);padding:40px 48px;}
+.lf-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;}
+.lf-logo{font-family:var(--serif);font-size:17px;font-weight:600;}
+.lf-logo span{font-style:italic;color:var(--amber);}
+.lf-links{display:flex;gap:22px;}
+.lf-links a{font-size:12px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.lf-links a:hover{color:var(--text);}
+.lf-copy{font-size:12px;color:var(--muted2);}
+
+/* ════════════════════════════
+   PRACTICE VIEW
+════════════════════════════ */
+.practice-layout{flex:1;display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 67px);}
+
+/* Sidebar */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;}
+.sb-head{padding:20px;border-bottom:1px solid var(--border);}
+.sb-head-title{font-family:var(--serif);font-size:17px;font-weight:300;margin-bottom:4px;}
+.sb-progress{margin-top:12px;}
+.sb-prog-label{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;font-family:var(--mono);}
+.sb-prog-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.sb-prog-fill{height:100%;background:var(--amber);border-radius:2px;transition:width .4s ease;}
+.sb-topics{flex:1;padding:12px;}
+.sb-topic-btn{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:10px 12px;border-radius:8px;border:none;background:none;
+  color:var(--muted);text-align:left;cursor:pointer;font-family:var(--sans);
+  font-size:13px;font-weight:400;transition:all .2s;margin-bottom:2px;
+}
+.sb-topic-btn:hover{background:var(--bg3);color:var(--text);}
+.sb-topic-btn.active{background:var(--amber-bg);color:var(--amber);font-weight:600;}
+.sb-topic-btn.done{color:var(--green);}
+.sb-topic-btn.done.active{background:var(--green-bg);color:var(--green);}
+.sb-topic-icon{font-size:16px;width:20px;text-align:center;}
+.sb-topic-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.sb-topic-count{font-family:var(--mono);font-size:10px;color:var(--muted2);}
+.sb-topic-check{font-size:12px;color:var(--green);}
+.sb-footer{padding:16px;border-top:1px solid var(--border);}
+.sb-back{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:10px 12px;border-radius:8px;border:1px solid var(--border);
+  background:none;color:var(--muted);cursor:pointer;font-family:var(--sans);
+  font-size:13px;transition:all .2s;
+}
+.sb-back:hover{border-color:var(--border2);color:var(--text);}
+
+/* Main practice area */
+.practice-main{display:flex;flex-direction:column;overflow:hidden;}
+.pm-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 24px;border-bottom:1px solid var(--border);
+  background:var(--bg2);flex-shrink:0;flex-wrap:wrap;gap:12px;
+}
+.pm-prob-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.pm-prob-title{font-family:var(--serif);font-size:17px;font-weight:300;letter-spacing:-.3px;}
+.diff-badge{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:100px;font-weight:600;}
+.pm-head-actions{display:flex;align-items:center;gap:10px;}
+.pm-prev,.pm-next{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--muted);padding:7px 14px;border-radius:7px;
+  font-size:12px;font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.pm-prev:hover,.pm-next:hover{border-color:var(--border2);color:var(--text);}
+.pm-solve-btn{
+  background:var(--amber);color:var(--bg);border:none;
+  padding:8px 18px;border-radius:7px;font-size:13px;font-weight:700;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.pm-solve-btn:hover{background:var(--amber2);}
+.pm-solve-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* Problem + editor split */
+.pm-split{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;}
+.pm-problem{padding:24px;overflow-y:auto;border-right:1px solid var(--border);}
+.prob-section-title{font-family:var(--mono);font-size:11px;color:var(--amber);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;}
+.prob-desc{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:24px;font-weight:300;}
+.prob-examples{display:flex;flex-direction:column;gap:12px;margin-bottom:24px;}
+.ex-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.ex-label{font-family:var(--mono);font-size:10px;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;}
+.ex-line{font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.7;}
+.ex-key{color:var(--amber);}
+.prob-constraints{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.prob-constraints ul{list-style:none;display:flex;flex-direction:column;gap:6px;}
+.prob-constraints li{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;gap:8px;}
+.prob-constraints li::before{content:'›';color:var(--amber);}
+
+/* Editor */
+.pm-editor-wrap{display:flex;flex-direction:column;overflow:hidden;}
+.editor-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border);
+  flex-shrink:0;gap:10px;
+}
+.editor-lang{font-family:var(--mono);font-size:12px;color:var(--amber);}
+.editor-hint{font-family:var(--mono);font-size:11px;color:var(--muted2);}
+
+/* Language selector */
+.lang-select{
+  font-family:var(--mono);font-size:12px;
+  background:var(--bg2);color:var(--amber);
+  border:1px solid rgba(245,158,11,.25);
+  border-radius:6px;padding:4px 8px;outline:none;cursor:pointer;
+}
+.lang-select:focus{border-color:var(--amber);}
+
+/* Monaco container */
+#monaco-editor-container{
+  flex:1;min-height:280px;overflow:hidden;
+  background:var(--bg2);
+}
+/* Hide the old textarea code-editor */
+.code-editor{
+  display:none;
+}
+.editor-footer{
+  padding:12px 16px;background:var(--bg3);border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px;
+}
+.run-btn{
+  background:var(--green);color:#fff;border:none;
+  padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:6px;
+}
+.run-btn:hover{background:#059669;}
+.run-btn:disabled{opacity:.5;cursor:not-allowed;}
+.ai-btn{
+  background:rgba(245,158,11,.12);color:var(--amber);
+  border:1px solid rgba(245,158,11,.25);
+  padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:6px;
+}
+.ai-btn:hover{background:rgba(245,158,11,.2);}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* Output panel */
+.output-panel{
+  border-top:1px solid var(--border);background:var(--bg3);
+  max-height:220px;overflow-y:auto;flex-shrink:0;
+}
+.out-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;border-bottom:1px solid var(--border);
+}
+.out-title{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.out-status{font-family:var(--mono);font-size:11px;font-weight:600;}
+.out-body{padding:14px 16px;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--muted);white-space:pre-wrap;}
+
+/* Mark done btn */
+.mark-done-btn{
+  background:var(--green-bg);color:var(--green);
+  border:1px solid rgba(16,185,129,.3);
+  padding:8px 16px;border-radius:7px;font-size:12px;font-weight:600;
+  font-family:var(--sans);cursor:pointer;transition:all .2s;
+}
+.mark-done-btn:hover{background:rgba(16,185,129,.2);}
+.mark-done-btn.marked{background:var(--green);color:#fff;}
+
+/* AI modal */
+.ai-modal-bg{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+.ai-modal-bg.open{display:flex;animation:fadeIn .2s ease;}
+.ai-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:32px;max-width:620px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:var(--sh-lg);position:relative;}
+.ai-modal h3{font-family:var(--serif);font-size:20px;font-weight:300;letter-spacing:-.4px;margin-bottom:6px;}
+.ai-modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.ai-close{position:absolute;top:14px;right:14px;background:var(--bg3);border:1px solid var(--border);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .2s;}
+.ai-close:hover{color:var(--text);}
+.ai-loading{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px;color:var(--muted);}
+.ai-spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-response{font-size:14px;color:var(--text);line-height:1.8;font-weight:300;}
+.ai-response strong{color:var(--amber);font-weight:600;}
+.ai-section{margin-top:16px;padding:14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);}
+.ai-section-label{font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.ai-score{font-family:var(--serif);font-size:48px;font-weight:300;text-align:center;margin:12px 0;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .topnav{padding:14px 24px;}
+  .nav-links,.nav-cta{display:none;}
+  .hbg{display:flex;}
+  .l-section,.hero{padding:60px 24px;}
+  .feat-wrap{grid-template-columns:1fr 1fr;}
+  .calc-row,.f-row{grid-template-columns:1fr;}
+  .calc-result.show{grid-template-columns:1fr;}
+  .l-footer{padding:28px 24px;}
+  .practice-layout{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .pm-split{grid-template-columns:1fr;}
+  .pm-problem{display:none;}
+}
+@media(max-width:600px){
+  .hero h1{letter-spacing:-1px;}
+  .feat-wrap{grid-template-columns:1fr;}
+  .topic-grid{grid-template-columns:repeat(2,1fr);}
+  .h-stats{gap:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════ LANDING ════════════ -->
+<!-- ════════════ AUTH ════════════ -->
+<div id="auth-view" class="active">
+  <div class="auth-mesh"></div>
+  <div class="auth-grid"></div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">&lt;/&gt;</div>
+      <div class="auth-logo-text">Code<span>Forge</span></div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+    </div>
+    <div class="auth-alert" id="auth-alert"></div>
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Sign in to continue your practice streak.</div>
+      <div class="auth-field">
+        <label>Email</label>
+        <div class="auth-input-wrap">
+          <input type="email" id="li-email" placeholder="you@example.com" oninput="clearAlert()">
+        </div>
+        <div class="auth-err" id="li-email-err">Please enter a valid email address.</div>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="auth-input-wrap">
+          <input type="password" id="li-pw" placeholder="Your password" oninput="clearAlert()">
+          <button class="pw-toggle" onclick="togglePw('li-pw',this)" tabindex="-1">&#128065;</button>
+        </div>
+        <div class="auth-err" id="li-pw-err">Password is required.</div>
+      </div>
+      <button class="auth-submit" onclick="doLogin()">Sign In &rarr;</button>
+      <div class="auth-divider"><div class="auth-divider-line"></div><div class="auth-divider-text">or</div><div class="auth-divider-line"></div></div>
+      <div style="text-align:center;font-size:13px;color:var(--muted);">No account? <span style="color:var(--amber);cursor:pointer;font-weight:600;" onclick="switchTab('signup')">Create one &rarr;</span></div>
+    </div>
+    <!-- SIGNUP -->
+    <div id="signup-form" style="display:none;">
+      <div class="auth-title">Create your account</div>
+      <div class="auth-sub">Join CodeForge and master the coding interview.</div>
+      <div class="auth-field">
+        <label>Full name</label>
+        <div class="auth-input-wrap">
+          <input type="text" id="su-name" placeholder="e.g. Fatima Al-Rashid" oninput="clearAlert()">
+        </div>
+        <div class="auth-err" id="su-name-err">Please enter your name.</div>
+      </div>
+      <div class="auth-field">
+        <label>I am</label>
+        <div class="gender-picker" id="gender-picker">
+          <div class="gender-opt" id="gender-male" onclick="selectGender('male')">
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Male avatar SVG (head + torso) -->
+              <circle cx="18" cy="12" r="7" fill="#3b82f6" opacity=".18"/>
+              <circle cx="18" cy="12" r="5.5" fill="#3b82f6" opacity=".55"/>
+              <!-- face -->
+              <circle cx="18" cy="11.5" r="4.5" fill="#fcd5a8"/>
+              <!-- hair -->
+              <path d="M13.5 10c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5c0-1-1-2.5-4.5-2.5S13.5 9 13.5 10z" fill="#7c5c3b"/>
+              <!-- eyes -->
+              <circle cx="16.3" cy="11.2" r=".7" fill="#2d2d2d"/>
+              <circle cx="19.7" cy="11.2" r=".7" fill="#2d2d2d"/>
+              <!-- mouth -->
+              <path d="M16.5 13.2 Q18 14.4 19.5 13.2" stroke="#c47a5a" stroke-width=".7" fill="none" stroke-linecap="round"/>
+              <!-- body/shirt -->
+              <path d="M11 28 Q11 21 18 21 Q25 21 25 28Z" fill="#3b82f6" opacity=".75"/>
+              <!-- neck -->
+              <rect x="16.3" y="15.5" width="3.4" height="3" rx="1" fill="#fcd5a8"/>
+            </svg>
+            Male
+          </div>
+          <div class="gender-opt" id="gender-female" onclick="selectGender('female')">
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Female avatar SVG -->
+              <circle cx="18" cy="12" r="7" fill="#ec4899" opacity=".15"/>
+              <!-- hair back -->
+              <ellipse cx="18" cy="13" rx="6" ry="7.5" fill="#7c3f6e"/>
+              <!-- face -->
+              <circle cx="18" cy="11.5" r="4.5" fill="#fcd5a8"/>
+              <!-- hair top -->
+              <path d="M13 10.5 Q13 5.5 18 5.5 Q23 5.5 23 10.5 Q21 8 18 8 Q15 8 13 10.5Z" fill="#9b4f8b"/>
+              <!-- eyes -->
+              <circle cx="16.3" cy="11.2" r=".75" fill="#2d2d2d"/>
+              <circle cx="19.7" cy="11.2" r=".75" fill="#2d2d2d"/>
+              <!-- lashes -->
+              <path d="M15.5 10.5 L15.1 10.1 M16.2 10.2 L16.1 9.7 M17 10.1 L17 9.6" stroke="#2d2d2d" stroke-width=".5" stroke-linecap="round"/>
+              <path d="M19 10.2 L18.9 9.7 M19.8 10.2 L19.9 9.7 M20.5 10.5 L20.9 10.1" stroke="#2d2d2d" stroke-width=".5" stroke-linecap="round"/>
+              <!-- mouth -->
+              <path d="M16.5 13.2 Q18 14.6 19.5 13.2" stroke="#e05c80" stroke-width=".8" fill="none" stroke-linecap="round"/>
+              <!-- blush -->
+              <ellipse cx="14.8" cy="12.8" rx="1.3" ry=".7" fill="#f9a8c9" opacity=".5"/>
+              <ellipse cx="21.2" cy="12.8" rx="1.3" ry=".7" fill="#f9a8c9" opacity=".5"/>
+              <!-- neck -->
+              <rect x="16.3" y="15.5" width="3.4" height="3" rx="1" fill="#fcd5a8"/>
+              <!-- top/blouse -->
+              <path d="M11 28 Q11 21 18 21 Q25 21 25 28Z" fill="#ec4899" opacity=".7"/>
+            </svg>
+            Female
+          </div>
+        </div>
+        <div class="auth-err" id="su-gender-err">Please select your gender.</div>
+      </div>
+      <div class="auth-field">
+        <label>Email</label>
+        <div class="auth-input-wrap">
+          <input type="email" id="su-email" placeholder="you@example.com" oninput="clearAlert()">
+        </div>
+        <div class="auth-err" id="su-email-err">Please enter a valid email.</div>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="auth-input-wrap">
+          <input type="password" id="su-pw" placeholder="Create a strong password" oninput="checkPwStrength(this.value)">
+          <button class="pw-toggle" onclick="togglePw('su-pw',this)" tabindex="-1">&#128065;</button>
+        </div>
+        <div class="auth-err" id="su-pw-err">Password does not meet all requirements.</div>
+        <div class="pw-strength" id="pw-strength">
+          <div class="pw-strength-bar">
+            <div class="pw-bar-seg" id="ps1"></div>
+            <div class="pw-bar-seg" id="ps2"></div>
+            <div class="pw-bar-seg" id="ps3"></div>
+            <div class="pw-bar-seg" id="ps4"></div>
+          </div>
+          <div class="pw-strength-label" id="pw-strength-label">Start typing...</div>
+        </div>
+        <div class="pw-reqs" id="pw-reqs" style="display:flex;flex-direction:column;gap:5px;margin-top:10px;">
+          <div class="pw-req" id="req-len"><div class="pw-req-dot"></div>At least 8 characters</div>
+          <div class="pw-req" id="req-upper"><div class="pw-req-dot"></div>At least one uppercase letter (A-Z)</div>
+          <div class="pw-req" id="req-lower"><div class="pw-req-dot"></div>At least one lowercase letter (a-z)</div>
+          <div class="pw-req" id="req-num"><div class="pw-req-dot"></div>At least one number (0-9)</div>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Confirm password</label>
+        <div class="auth-input-wrap">
+          <input type="password" id="su-pw2" placeholder="Repeat your password" oninput="clearAlert()">
+          <button class="pw-toggle" onclick="togglePw('su-pw2',this)" tabindex="-1">&#128065;</button>
+        </div>
+        <div class="auth-err" id="su-pw2-err">Passwords do not match.</div>
+      </div>
+      <button class="auth-submit" onclick="doSignup()">Create Account &rarr;</button>
+      <div class="auth-divider"><div class="auth-divider-line"></div><div class="auth-divider-text">or</div><div class="auth-divider-line"></div></div>
+      <div style="text-align:center;font-size:13px;color:var(--muted);">Already have an account? <span style="color:var(--amber);cursor:pointer;font-weight:600;" onclick="switchTab('login')">Sign in &rarr;</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="landing" class="view">
+
+  <nav class="topnav">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">&lt;/&gt;</div>
+      <div class="nav-logo-text">Code<span>Forge</span></div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#l-features">Features</a></li>
+      <li><a href="#l-topics">Topics</a></li>
+      <li><a href="#l-tips">Tips</a></li>
+      <li><a href="#l-gallery">Companies</a></li>
+      <li><a href="#l-form">Get Started</a></li>
+    </ul>
+    <button class="nav-cta" onclick="showPractice()">Start Practicing →</button>
+
+    <!-- User pill with dropdown (shown after login) -->
+    <div class="nav-user-pill" id="l-user-pill" onclick="toggleNavDropdown('l-user-pill')">
+      <div class="nav-user-avatar" id="l-avatar">?</div>
+      <span class="nav-user-name" id="l-username">User</span>
+      <span class="nav-user-caret">▾</span>
+      <div class="nav-dropdown" id="l-dropdown">
+        <div class="nd-header">
+          <div class="nd-header-name" id="l-dd-name">—</div>
+          <div class="nd-header-email" id="l-dd-email">—</div>
+        </div>
+        <button class="nd-item" onclick="event.stopPropagation();openProfile()">
+          <span class="nd-item-icon">👤</span> My Profile
+        </button>
+        <button class="nd-item" onclick="event.stopPropagation();showPractice()">
+          <span class="nd-item-icon">💻</span> Practice
+        </button>
+        <div class="nd-sep"></div>
+        <button class="nd-item nd-logout" onclick="event.stopPropagation();doLogout()">
+          <span class="nd-item-icon">🚪</span> Log out
+        </button>
+      </div>
+    </div>
+
+    <button class="hbg" id="hbg" onclick="toggleMob()"><span></span><span></span><span></span></button>
+  </nav>
+  <div class="mob-nav" id="mobNav">
+    <a href="#l-features" onclick="closeMob()">Features</a>
+    <a href="#l-topics" onclick="closeMob()">Topics</a>
+    <a href="#l-tips" onclick="closeMob()">Tips</a>
+    <a href="#l-gallery" onclick="closeMob()">Companies</a>
+    <a href="#l-form" onclick="closeMob()">Get Started</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-mesh"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-inner">
+      <div class="hero-badge">✦ Coding Interview Preparation Platform</div>
+      <div id="hero-greeting" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:20px;animation:fadeUp .5s .05s ease both;"></div>
+      <h1><em>Forge</em> your skills.<br><strong>Ace the interview.</strong></h1>
+      <p class="hero-sub">Practice real interview problems across every topic — from Arrays to Dynamic Programming. Get AI-powered feedback on your solutions. Track your progress.</p>
+      <div class="hero-btns">
+        <button class="btn-amber" onclick="showPractice()">Start Practicing →</button>
+        <button class="btn-ghost" onclick="document.getElementById('l-topics').scrollIntoView({behavior:'smooth'})">Browse Topics</button>
+      </div>
+      <!-- Terminal mockup -->
+      <div class="hero-terminal">
+        <div class="terminal-bar">
+          <div class="t-dot" style="background:#ff5f57"></div>
+          <div class="t-dot" style="background:#febc2e"></div>
+          <div class="t-dot" style="background:#28c840"></div>
+          <div class="t-title">solution.py — CodeForge</div>
+        </div>
+        <div class="terminal-body">
+<span class="t-comment"># Two Sum — find indices of two numbers that add to target</span>
+<span class="t-keyword">def</span> <span class="t-fn">twoSum</span>(nums, target):
+  seen = {}
+  <span class="t-keyword">for</span> i, num <span class="t-keyword">in</span> <span class="t-fn">enumerate</span>(nums):
+    complement = target - num
+    <span class="t-keyword">if</span> complement <span class="t-keyword">in</span> seen:
+      <span class="t-keyword">return</span> [seen[complement], i]
+    seen[num] = i
+
+<span class="t-comment"># Time: O(n) · Space: O(n)</span>
+<span class="t-comment"># ✓ All test cases passed <span class="t-cursor"></span></span>
+        </div>
+      </div>
+      <div class="hero-stats" style="margin-top:40px;">
+        <div class="h-stat"><div class="h-stat-n">50+</div><div class="h-stat-l">Problems</div></div>
+        <div class="h-div"></div>
+        <div class="h-stat"><div class="h-stat-n">8</div><div class="h-stat-l">Topic areas</div></div>
+        <div class="h-div"></div>
+        <div class="h-stat"><div class="h-stat-n">AI</div><div class="h-stat-l">Powered feedback</div></div>
+        <div class="h-div"></div>
+        <div class="h-stat"><div class="h-stat-n">Free</div><div class="h-stat-l">Always</div></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="l-sep">
+
+  <!-- FEATURES -->
+  <div id="l-features" class="l-section">
+    <div class="s-label">Why CodeForge</div>
+    <div class="s-title">Everything you need to<br><em>crack the technical interview</em></div>
+    <div class="feat-wrap">
+      <div class="feat"><div class="feat-icon">⚡</div><h3>Real code editor</h3><p>Write Python directly in the browser with a syntax-aware editor. No setup, no install — just open and code.</p></div>
+      <div class="feat"><div class="feat-icon">🤖</div><h3>AI solution review</h3><p>Submit your code and get a detailed AI breakdown: correctness, time complexity, space complexity, and improvements.</p></div>
+      <div class="feat"><div class="feat-icon">📈</div><h3>Progress tracking</h3><p>Mark problems solved and watch your completion rate climb. Progress saves automatically to your browser.</p></div>
+      <div class="feat"><div class="feat-icon">🗂️</div><h3>8 topic categories</h3><p>Arrays, Strings, Trees, Graphs, Dynamic Programming, Sorting, Linked Lists, and Recursion — all covered.</p></div>
+      <div class="feat"><div class="feat-icon">🎯</div><h3>Difficulty levels</h3><p>Easy, Medium, and Hard problems for every topic. Start easy, build confidence, then tackle the hard ones.</p></div>
+      <div class="feat"><div class="feat-icon">💾</div><h3>Offline & persistent</h3><p>All data saved locally. No account needed. Works without internet. Your progress never disappears.</p></div>
+    </div>
+  </div>
+
+  <hr class="l-sep">
+
+  <!-- TOPIC GALLERY -->
+  <div id="l-topics" class="l-section">
+    <div class="s-label">Topics</div>
+    <div class="s-title">Pick your battleground</div>
+    <p class="s-sub">Click any topic to jump straight into practice mode. Your progress is tracked automatically.</p>
+    <div class="topic-grid" id="landing-topics"></div>
+  </div>
+
+  <hr class="l-sep">
+
+  <!-- TIPS SLIDESHOW -->
+  <div id="l-tips" class="l-section">
+    <div class="s-label">Interview wisdom</div>
+    <div class="s-title">Tips that actually<br><em>make the difference</em></div>
+    <div class="slideshow">
+      <div class="slide active"><div class="slide-num">01 / 06</div><div class="slide-q">"Think <em>out loud</em> — interviewers are evaluating your process, not just the answer."</div><div class="slide-d">Before you type a single line, explain your approach. Walk through your reasoning, name the data structures you're considering, and ask clarifying questions. A candidate who thinks clearly but codes slowly beats one who codes fast but silently every time.</div></div>
+      <div class="slide"><div class="slide-num">02 / 06</div><div class="slide-q">"Always clarify constraints before writing code — it signals senior-level thinking."</div><div class="slide-d">Ask about input size, edge cases, and whether the input is sorted. Can the array have duplicates? Can values be negative? These questions take 60 seconds and prevent wasting 20 minutes on the wrong solution.</div></div>
+      <div class="slide"><div class="slide-num">03 / 06</div><div class="slide-q">"Start with brute force, then optimise — never start with the optimal solution."</div><div class="slide-d">A working O(n²) solution you can explain beats an O(n) solution you can't justify. State the brute force first, get agreement, then improve. This shows methodical thinking and builds trust with the interviewer.</div></div>
+      <div class="slide"><div class="slide-num">04 / 06</div><div class="slide-q">"Time and space complexity analysis is not optional — it's expected at every level."</div><div class="slide-d">After coding, always state your time and space complexity unprompted. O(n), O(log n), O(n²) — know them, justify them. Interviewers at FAANG companies consider this a baseline requirement, not a bonus.</div></div>
+      <div class="slide"><div class="slide-num">05 / 06</div><div class="slide-q">"Test your code on examples — including edge cases — before saying you're done."</div><div class="slide-d">Dry run your solution on the given example, then test empty input, a single element, and the maximum size. Catching your own bugs impresses interviewers far more than a perfect first attempt that breaks on edge cases.</div></div>
+      <div class="slide"><div class="slide-num">06 / 06</div><div class="slide-q">"Pattern recognition is the real skill — learn 14 patterns and you can solve 90% of problems."</div><div class="slide-d">Sliding window, two pointers, fast & slow pointers, merge intervals, cyclic sort, BFS/DFS, dynamic programming, backtracking — master these patterns and most problems become recognisable variations rather than unknown puzzles.</div></div>
+      <div class="slide-controls">
+        <button class="s-dot active" onclick="goSlide(0)"></button>
+        <button class="s-dot" onclick="goSlide(1)"></button>
+        <button class="s-dot" onclick="goSlide(2)"></button>
+        <button class="s-dot" onclick="goSlide(3)"></button>
+        <button class="s-dot" onclick="goSlide(4)"></button>
+        <button class="s-dot" onclick="goSlide(5)"></button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="l-sep">
+
+  <!-- COMPANY GALLERY -->
+  <div id="l-gallery" class="l-section">
+    <div class="s-label">Company insights</div>
+    <div class="s-title">Know what each<br><em>company tests</em></div>
+    <p class="s-sub">Click any company to see their interview style, favourite topics, and difficulty breakdown.</p>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="openLb('google')"><div class="topic-icon">🔍</div><div class="topic-name">Google</div><div class="topic-count">Algorithms heavy</div></div>
+      <div class="topic-card" onclick="openLb('meta')"><div class="topic-icon">🌐</div><div class="topic-name">Meta</div><div class="topic-count">Arrays & graphs</div></div>
+      <div class="topic-card" onclick="openLb('amazon')"><div class="topic-icon">📦</div><div class="topic-name">Amazon</div><div class="topic-count">Trees & design</div></div>
+      <div class="topic-card" onclick="openLb('apple')"><div class="topic-icon">🍎</div><div class="topic-name">Apple</div><div class="topic-count">Strings & arrays</div></div>
+      <div class="topic-card" onclick="openLb('microsoft')"><div class="topic-icon">🪟</div><div class="topic-name">Microsoft</div><div class="topic-count">Trees & DP</div></div>
+      <div class="topic-card" onclick="openLb('netflix')"><div class="topic-icon">🎬</div><div class="topic-name">Netflix</div><div class="topic-count">System design</div></div>
+      <div class="topic-card" onclick="openLb('stripe')"><div class="topic-icon">💳</div><div class="topic-name">Stripe</div><div class="topic-count">APIs & reliability</div></div>
+      <div class="topic-card" onclick="openLb('uber')"><div class="topic-icon">🚗</div><div class="topic-name">Uber</div><div class="topic-count">Graphs & geo</div></div>
+      <div class="topic-card" onclick="openLb('airbnb')"><div class="topic-icon">🏠</div><div class="topic-name">Airbnb</div><div class="topic-count">OOP & search</div></div>
+      <div class="topic-card" onclick="openLb('salesforce')"><div class="topic-icon">☁️</div><div class="topic-name">Salesforce</div><div class="topic-count">DB & scalability</div></div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLbOut(event)">
+    <div class="lb-box">
+      <button class="lb-close" onclick="closeLb()">✕</button>
+      <div class="lb-icon" id="lb-icon"></div>
+      <div class="lb-title" id="lb-title"></div>
+      <div class="lb-tag" id="lb-tag"></div>
+      <div class="lb-desc" id="lb-desc"></div>
+    </div>
+  </div>
+
+  <hr class="l-sep">
+
+  <!-- MOOD -->
+  <div class="l-section">
+    <div class="s-label">Mindset check</div>
+    <div class="s-title">How are you feeling<br><em>before practice?</em></div>
+    <div class="mood-row">
+      <button class="m-btn" onclick="pickMood(this,'Take it easy today — pick Easy problems and build confidence. Every expert was once a beginner.')"><span>😓</span><span>Rusty</span></button>
+      <button class="m-btn" onclick="pickMood(this,'Good baseline. Tackle a couple of Medium problems and focus on clean code.')"><span>😐</span><span>Okay</span></button>
+      <button class="m-btn" onclick="pickMood(this,'Solid energy. Push yourself with a Hard problem today — you might surprise yourself.')"><span>🧠</span><span>Sharp</span></button>
+      <button class="m-btn" onclick="pickMood(this,'You are in the zone. Go for a Hard problem and aim for optimal complexity. Today is your day.')"><span>🔥</span><span>In the zone</span></button>
+    </div>
+    <div id="mood-msg"></div>
+  </div>
+
+  <hr class="l-sep">
+
+  <!-- CALCULATOR -->
+  <div class="l-section">
+    <div class="s-label">Progress analytics</div>
+    <div class="s-title">Calculate your<br><em>readiness score</em></div>
+    <p class="s-sub">Enter your practice stats to see how interview-ready you are right now.</p>
+    <div class="calc-box">
+      <div class="calc-row">
+        <div class="c-f"><label>Easy problems solved</label><input type="number" id="c-easy" placeholder="e.g. 20" min="0"></div>
+        <div class="c-f"><label>Medium problems solved</label><input type="number" id="c-med" placeholder="e.g. 15" min="0"></div>
+      </div>
+      <div class="calc-row">
+        <div class="c-f"><label>Hard problems solved</label><input type="number" id="c-hard" placeholder="e.g. 5" min="0"></div>
+        <div class="c-f"><label>Days of practice</label><input type="number" id="c-days" placeholder="e.g. 30" min="0"></div>
+      </div>
+      <button class="calc-btn" onclick="runCalc()">Calculate Readiness Score →</button>
+      <div class="calc-result" id="calc-res">
+        <div class="c-met"><div class="c-met-n" id="r-score" style="color:var(--amber)">—</div><div class="c-met-l">Readiness score</div></div>
+        <div class="c-met"><div class="c-met-n" id="r-total" style="color:var(--green)">—</div><div class="c-met-l">Problems solved</div></div>
+        <div class="c-met"><div class="c-met-n" id="r-daily" style="color:var(--blue)">—</div><div class="c-met-l">Problems / day</div></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="l-sep">
+
+  <!-- FORM -->
+  <div id="l-form" class="l-section">
+    <div class="s-label">Get started</div>
+    <div class="s-title">Set your goal &<br><em>start your journey</em></div>
+    <div class="form-box">
+      <div class="f-row">
+        <div class="c-f"><label>Your name</label><input type="text" id="ff-name" placeholder="e.g. Fatima Al-Rashid"></div>
+        <div class="c-f"><label>Target company</label><input type="text" id="ff-company" placeholder="e.g. Google, Meta, Stripe"></div>
+      </div>
+      <div class="f-row">
+        <div class="c-f"><label>Interview date (approx)</label><input type="date" id="ff-date"></div>
+        <div class="c-f"><label>Starting level</label>
+          <select id="ff-level">
+            <option value="">Select your level</option>
+            <option>Beginner — just starting out</option>
+            <option>Intermediate — solved some problems</option>
+            <option>Advanced — ready for FAANG</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-f"><label>What topics do you want to focus on?</label><textarea id="ff-notes" placeholder="e.g. Trees, Dynamic Programming, Graph traversal..."></textarea></div>
+      <button class="f-submit" onclick="submitForm()">Save My Goal & Start Practicing →</button>
+      <div id="f-ok">🎯 Goal saved! Opening your practice dashboard now...</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="l-footer">
+    <div class="lf-inner">
+      <div>
+        <div class="lf-logo">Code<span>Forge</span></div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:5px;">Cognifyz Technologies Web Dev Internship · 2026</div>
+      </div>
+      <div class="lf-links">
+        <a href="#l-features">Features</a>
+        <a href="#l-topics">Topics</a>
+        <a href="#l-tips">Tips</a>
+        <a href="#l-gallery">Companies</a>
+        <a href="#l-form">Get Started</a>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">
+        codeforge10@gmail.com · www.codeforge.com<br>
+        <span style="color:var(--muted2);">@codeforge-tech</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ════════════ PRACTICE ════════════ -->
+<div id="practice" class="view">
+  <nav class="topnav">
+    <a class="nav-logo" onclick="showLanding()" style="cursor:pointer;">
+      <div class="nav-logo-icon">&lt;/&gt;</div>
+      <div class="nav-logo-text">Code<span>Forge</span></div>
+    </a>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div id="p-greeting" style="font-family:var(--mono);font-size:12px;color:var(--muted);"></div>
+      <button class="nav-cta" onclick="showLanding()">← Back to Home</button>
+
+      <!-- User pill with dropdown (shown after login) -->
+      <div class="nav-user-pill" id="p-user-pill" onclick="toggleNavDropdown('p-user-pill')">
+        <div class="nav-user-avatar" id="p-avatar">?</div>
+        <span class="nav-user-name" id="p-username">User</span>
+        <span class="nav-user-caret">▾</span>
+        <div class="nav-dropdown" id="p-dropdown">
+          <div class="nd-header">
+            <div class="nd-header-name" id="p-dd-name">—</div>
+            <div class="nd-header-email" id="p-dd-email">—</div>
+          </div>
+          <button class="nd-item" onclick="event.stopPropagation();openProfile()">
+            <span class="nd-item-icon">👤</span> My Profile
+          </button>
+          <button class="nd-item" onclick="event.stopPropagation();showLanding()">
+            <span class="nd-item-icon">🏠</span> Home
+          </button>
+          <div class="nd-sep"></div>
+          <button class="nd-item nd-logout" onclick="event.stopPropagation();doLogout()">
+            <span class="nd-item-icon">🚪</span> Log out
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="practice-layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sb-head">
+        <div class="sb-head-title">Practice Dashboard</div>
+        <div class="sb-progress">
+          <div class="sb-prog-label">
+            <span>Overall progress</span>
+            <span id="sb-pct">0%</span>
+          </div>
+          <div class="sb-prog-bar"><div class="sb-prog-fill" id="sb-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="search-wrap">
+  <div class="search-wrap-inner">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="prob-search" placeholder="Search problems..." oninput="searchProblems(this.value)">
+  </div>
+</div>
+<!-- Difficulty filter -->
+<div class="diff-filter">
+  <span class="diff-filter-label">Filter:</span>
+  <button class="diff-btn" id="df-all"    onclick="setDiffFilter('all')"   >All</button>
+  <button class="diff-btn" id="df-easy"   onclick="setDiffFilter('Easy')"  >Easy</button>
+  <button class="diff-btn" id="df-medium" onclick="setDiffFilter('Medium')">Medium</button>
+  <button class="diff-btn" id="df-hard"   onclick="setDiffFilter('Hard')"  >Hard</button>
+</div>
+<div class="sb-topics" id="sb-topics"></div>
+      <div class="sb-footer">
+        <button class="sb-back" onclick="showLanding()">← Back to Home</button>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="practice-main">
+      <div class="pm-head">
+        <div class="pm-prob-meta">
+          <div class="pm-prob-title" id="pm-title">Select a topic to begin</div>
+          <div class="diff-badge" id="pm-diff"></div>
+        </div>
+        <div class="pm-head-actions">
+          <button class="mark-done-btn" id="mark-done" onclick="markDone()">✓ Mark Solved</button>
+          <button class="pm-prev" onclick="prevProb()">← Prev</button>
+          <button class="pm-next" onclick="nextProb()">Next →</button>
+        </div>
+      </div>
+
+      <div class="pm-split">
+        <!-- Problem description -->
+        <div class="pm-problem" id="pm-problem">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;opacity:.3;gap:12px;">
+            <div style="font-size:40px;">⬅</div>
+            <div style="font-family:var(--mono);font-size:13px;color:var(--muted);">Select a topic from the sidebar</div>
+          </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="pm-editor-wrap">
+          <div class="editor-toolbar">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="editor-lang">Editor</div>
+              <select class="lang-select" id="lang-select" onchange="changeLang(this.value)">
+                <option value="python">Python 3</option>
+                <option value="javascript">JavaScript</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+              </select>
+            </div>
+            <div class="editor-hint">Ctrl+Enter = Run &nbsp;·&nbsp; Real execution via Piston</div>
+          </div>
+          <!-- Monaco Editor -->
+          <div id="monaco-editor-container"></div>
+          <!-- Hidden textarea for compatibility -->
+          <textarea class="code-editor" id="code-editor" spellcheck="false"></textarea>
+          <div class="output-panel" id="output-panel">
+            <div class="out-head">
+              <div class="out-title">Output</div>
+              <div class="out-status" id="out-status"></div>
+            </div>
+            <div class="out-body" id="out-body">// Run your code to see output here</div>
+          </div>
+          <div class="editor-footer">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="run-btn" id="run-btn" onclick="runCode()">▶ Run Code</button>
+              <button class="ai-btn" id="ai-btn" onclick="getAIReview()">✦ AI Review</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="timer-wrap">
+                <div class="timer-display" id="timer-display">00:00</div>
+                <button class="timer-btn" id="timer-toggle-btn" onclick="toggleTimer()" title="Start/pause timer">▶</button>
+                <button class="timer-btn" onclick="resetTimer()" title="Reset timer">↺</button>
+              </div>
+              <div style="font-family:var(--mono);font-size:11px;color:var(--muted2);" id="prob-counter"></div>
+            </div>
+          </div>
+          <!-- HINT PANEL -->
+          <div class="hint-panel" id="hint-panel">
+            <div class="hint-num" id="hint-num">Hint 1 of 3</div>
+            <div class="hint-text" id="hint-text"></div>
+            <button class="hint-next" id="hint-next-btn" onclick="nextHint()">Next hint &rarr;</button>
+          </div>
+          <!-- NOTES PANEL -->
+          <div class="notes-panel">
+            <div class="notes-head" onclick="toggleNotes()">
+              <div class="notes-head-left">
+                <span class="notes-label">📝 My Notes</span>
+                <span class="notes-saved" id="notes-saved">Saved ✓</span>
+              </div>
+              <span class="notes-toggle-icon" id="notes-toggle-icon">▼</span>
+            </div>
+            <div class="notes-body" id="notes-body">
+              <textarea class="notes-textarea" id="notes-textarea" placeholder="Write your notes, approach, or key insights for this problem..."></textarea>
+              <button class="notes-save-btn" onclick="saveNotes()">Save Notes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div id="profile-view">
+  <div class="profile-card">
+    <button class="profile-close" onclick="closeProfile()">&#x2715;</button>
+    <div class="profile-avatar-lg" id="prof-avatar-lg"></div>
+    <div class="profile-name" id="prof-name"></div>
+    <div class="profile-email" id="prof-email"></div>
+    <button class="edit-profile-btn" onclick="toggleAvatarPicker()">✏️ Edit Avatar</button>
+
+    <!-- AVATAR PICKER PANEL -->
+    <div class="avatar-picker-panel" id="avatar-picker-panel">
+      <div class="ap-title">Choose your avatar</div>
+      <div class="ap-gender-row">
+        <button class="ap-gender-btn" id="ap-male-btn"   onclick="apSetGender('male')">👨 Male</button>
+        <button class="ap-gender-btn" id="ap-female-btn" onclick="apSetGender('female')">👩 Female</button>
+      </div>
+      <div class="ap-section-lbl">Select a style</div>
+      <div class="ap-avatar-grid" id="ap-avatar-grid"></div>
+      <div class="ap-save-row">
+        <button class="ap-save-btn"   onclick="saveAvatarChoice()">Save Avatar</button>
+        <button class="ap-cancel-btn" onclick="toggleAvatarPicker()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="profile-stats-grid">
+      <div class="profile-stat"><div class="profile-stat-n" id="prof-total" style="color:var(--amber)">0</div><div class="profile-stat-l">Problems solved</div></div>
+      <div class="profile-stat"><div class="profile-stat-n" id="prof-streak" style="color:var(--orange)">0🔥</div><div class="profile-stat-l">Day streak</div></div>
+      <div class="profile-stat"><div class="profile-stat-n" id="prof-hard" style="color:var(--red)">0</div><div class="profile-stat-l">Hard solved</div></div>
+    </div>
+    <div class="profile-section-title">Progress by topic</div>
+    <div class="profile-topic-bars" id="prof-topic-bars"></div>
+    <button class="export-btn" onclick="exportProgress()">&#128196; Export Progress Report (PDF)</button>
+  </div>
+</div>
+
+<!-- AI Review Modal -->
+<div class="ai-modal-bg" id="ai-modal">
+  <div class="ai-modal">
+    <button class="ai-close" onclick="closeAI()">✕</button>
+    <h3>✦ AI Code Review</h3>
+    <div class="ai-modal-sub" id="ai-modal-sub">Analysing your solution...</div>
+    <div id="ai-content">
+      <div class="ai-loading"><div class="ai-spinner"></div>Sending to AI engine...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const TOPICS = [
+  {
+    id:'arrays', name:'Arrays', icon:'📊', color:'var(--amber)',
+    problems:[
+      {id:'a1',title:'Two Sum',diff:'Easy',desc:'Given an array of integers <code>nums</code> and an integer <code>target</code>, return the indices of the two numbers that add up to target. You may assume exactly one solution exists, and you cannot use the same element twice.',
+       examples:[{input:'nums = [2,7,11,15], target = 9',output:'[0, 1]',explain:'nums[0] + nums[1] = 2 + 7 = 9'},{input:'nums = [3,2,4], target = 6',output:'[1, 2]'}],
+       constraints:['2 ≤ nums.length ≤ 10⁴','-10⁹ ≤ nums[i] ≤ 10⁹','Exactly one valid answer exists'],
+       starter:`def twoSum(nums, target):\n    # Your solution here\n    pass\n\n# Test\nprint(twoSum([2,7,11,15], 9))  # [0, 1]\nprint(twoSum([3,2,4], 6))       # [1, 2]`},
+      {id:'a2',title:'Best Time to Buy and Sell Stock',diff:'Easy',desc:'You are given an array <code>prices</code> where prices[i] is the price of a stock on day i. Find the maximum profit you can achieve by buying on one day and selling on a later day. Return 0 if no profit is possible.',
+       examples:[{input:'prices = [7,1,5,3,6,4]',output:'5',explain:'Buy at 1, sell at 6 = profit of 5'}],
+       constraints:['1 ≤ prices.length ≤ 10⁵','0 ≤ prices[i] ≤ 10⁴'],
+       starter:`def maxProfit(prices):\n    # Your solution here\n    pass\n\nprint(maxProfit([7,1,5,3,6,4]))  # 5\nprint(maxProfit([7,6,4,3,1]))    # 0`},
+      {id:'a3',title:'Product of Array Except Self',diff:'Medium',desc:'Given an integer array <code>nums</code>, return an array output where output[i] is equal to the product of all elements of nums except nums[i]. You must solve it in O(n) time without using the division operation.',
+       examples:[{input:'nums = [1,2,3,4]',output:'[24,12,8,6]'}],
+       constraints:['2 ≤ nums.length ≤ 10⁵','Guaranteed product fits in 32-bit integer'],
+       starter:`def productExceptSelf(nums):\n    # Your solution here\n    pass\n\nprint(productExceptSelf([1,2,3,4]))  # [24,12,8,6]`},
+      {id:'a4',title:'Contains Duplicate',diff:'Easy',desc:'Given an integer array, return true if any value appears at least twice in the array, and false if every element is distinct.',
+       examples:[{input:'[1,2,3,1]',output:'true'},{input:'[1,2,3,4]',output:'false'}],
+       constraints:['1 ≤ nums.length ≤ 10⁵'],
+       starter:`def containsDuplicate(nums):\n    # Your solution here\n    pass`},
+      {id:'a5',title:'3Sum',diff:'Medium',desc:'Given an integer array nums, return all unique triplets [nums[i], nums[j], nums[k]] such that they add up to zero.',
+       examples:[{input:'nums = [-1,0,1,2,-1,-4]',output:'[[-1,-1,2],[-1,0,1]]'}],
+       constraints:['0 ≤ nums.length ≤ 3000'],
+       starter:`def threeSum(nums):\n    # Your solution here\n    pass`},
+    ]
+  },
+  {
+    id:'strings', name:'Strings', icon:'📝', color:'var(--blue)',
+    problems:[
+      {id:'s1',title:'Valid Anagram',diff:'Easy',desc:'Given two strings <code>s</code> and <code>t</code>, return true if <code>t</code> is an anagram of <code>s</code>, and false otherwise. An anagram uses all the original letters exactly once.',
+       examples:[{input:'s = "anagram", t = "nagaram"',output:'true'},{input:'s = "rat", t = "car"',output:'false'}],
+       constraints:['1 ≤ s.length, t.length ≤ 5 × 10⁴','s and t consist of lowercase English letters'],
+       starter:`def isAnagram(s, t):\n    # Your solution here\n    pass\n\nprint(isAnagram("anagram","nagaram"))  # True\nprint(isAnagram("rat","car"))          # False`},
+      {id:'s2',title:'Longest Substring Without Repeating Characters',diff:'Medium',desc:'Given a string <code>s</code>, find the length of the longest substring without repeating characters.',
+       examples:[{input:'s = "abcabcbb"',output:'3',explain:'"abc" has length 3'}],
+       constraints:['0 ≤ s.length ≤ 5 × 10⁴'],
+       starter:`def lengthOfLongestSubstring(s):\n    # Your solution here\n    pass\n\nprint(lengthOfLongestSubstring("abcabcbb"))  # 3\nprint(lengthOfLongestSubstring("bbbbb"))     # 1`},
+      {id:'s3',title:'Minimum Window Substring',diff:'Hard',desc:'Given strings <code>s</code> and <code>t</code>, return the minimum window substring of s that contains all characters of t. If no such window exists return "".',
+       examples:[{input:'s = "ADOBECODEBANC", t = "ABC"',output:'"BANC"'}],
+       constraints:['1 ≤ s.length, t.length ≤ 10⁵'],
+       starter:`def minWindow(s, t):\n    # Your solution here\n    pass\n\nprint(minWindow("ADOBECODEBANC","ABC"))  # "BANC"`},
+      {id:'s4',title:'Longest Palindromic Substring',diff:'Medium',desc:'Given a string s, return the longest palindromic substring in s.',
+       examples:[{input:'s = "babad"',output:'"bab" or "aba"'}],
+       constraints:['1 ≤ s.length ≤ 1000'],
+       starter:`def longestPalindrome(s):\n    # Your solution here\n    pass`},
+      {id:'s5',title:'Group Anagrams',diff:'Medium',desc:'Given an array of strings, group the anagrams together.',
+       examples:[{input:'["eat","tea","tan","ate","nat","bat"]',output:'[["eat","tea","ate"],["tan","nat"],["bat"]]'}],
+       constraints:['1 ≤ strs.length ≤ 10⁴'],
+       starter:`def groupAnagrams(strs):\n    # Your solution here\n    pass`},
+    ]
+  },
+  {
+    id:'trees', name:'Binary Trees', icon:'🌳', color:'var(--green)',
+    problems:[
+      {id:'t1',title:'Maximum Depth of Binary Tree',diff:'Easy',desc:'Given the root of a binary tree, return its maximum depth — the number of nodes along the longest path from root to the farthest leaf node.',
+       examples:[{input:'root = [3,9,20,null,null,15,7]',output:'3'}],
+       constraints:['0 ≤ number of nodes ≤ 10⁴','-100 ≤ Node.val ≤ 100'],
+       starter:`class TreeNode:\n    def __init__(self, val=0, left=None, right=None):\n        self.val = val\n        self.left = left\n        self.right = right\n\ndef maxDepth(root):\n    # Your solution here\n    pass`},
+      {id:'t2',title:'Invert Binary Tree',diff:'Easy',desc:'Given the root of a binary tree, invert it (mirror it) and return the root.',
+       examples:[{input:'root = [4,2,7,1,3,6,9]',output:'[4,7,2,9,6,3,1]'}],
+       constraints:['0 ≤ number of nodes ≤ 100'],
+       starter:`def invertTree(root):\n    # Your solution here\n    pass`},
+      {id:'t3',title:'Binary Tree Level Order Traversal',diff:'Medium',desc:'Given the root of a binary tree, return the level order traversal of its nodes\' values as a list of lists.',
+       examples:[{input:'root = [3,9,20,null,null,15,7]',output:'[[3],[9,20],[15,7]]'}],
+       constraints:['0 ≤ number of nodes ≤ 2000'],
+       starter:`from collections import deque\n\ndef levelOrder(root):\n    # Your solution here\n    pass`},
+      {id:'t4',title:'Validate Binary Search Tree',diff:'Medium',desc:'Given the root of a binary tree, determine if it is a valid binary search tree (BST).',
+       examples:[{input:'root = [2,1,3]',output:'true'},{input:'root = [5,1,4,null,null,3,6]',output:'false'}],
+       constraints:['0 ≤ number of nodes ≤ 10⁴'],
+       starter:`def isValidBST(root):\n    # Your solution here\n    pass`},
+      {id:'t5',title:'Lowest Common Ancestor of a Binary Tree',diff:'Medium',desc:'Given a binary tree and two nodes p and q, return their lowest common ancestor (LCA).',
+       examples:[{input:'root = [3,5,1,6,2,0,8], p=5, q=1',output:'3'}],
+       constraints:['All node values are unique'],
+       starter:`def lowestCommonAncestor(root, p, q):\n    # Your solution here\n    pass`},
+    ]
+  },
+  {
+    id:'dp', name:'Dynamic Programming', icon:'⚡', color:'var(--orange)',
+    problems:[
+      {id:'d1',title:'Climbing Stairs',diff:'Easy',desc:'You are climbing a staircase with n steps. Each time you can climb 1 or 2 steps. In how many distinct ways can you climb to the top?',
+       examples:[{input:'n = 2',output:'2',explain:'1+1 or 2'},{input:'n = 3',output:'3',explain:'1+1+1, 1+2, or 2+1'}],
+       constraints:['1 ≤ n ≤ 45'],
+       starter:`def climbStairs(n):\n    # Your solution here\n    pass\n\nprint(climbStairs(2))  # 2\nprint(climbStairs(5))  # 8`},
+      {id:'d2',title:'House Robber',diff:'Medium',desc:'You are a robber planning to rob houses along a street. Adjacent houses have alarms — you cannot rob two adjacent houses. Given an integer array nums representing the amount of money at each house, return the maximum amount you can rob.',
+       examples:[{input:'nums = [1,2,3,1]',output:'4',explain:'Rob house 1 (1) then house 3 (3)'}],
+       constraints:['1 ≤ nums.length ≤ 100','0 ≤ nums[i] ≤ 400'],
+       starter:`def rob(nums):\n    # Your solution here\n    pass\n\nprint(rob([1,2,3,1]))     # 4\nprint(rob([2,7,9,3,1]))   # 12`},
+      {id:'d3',title:'Longest Common Subsequence',diff:'Hard',desc:'Given two strings text1 and text2, return the length of their longest common subsequence. A subsequence is formed by deleting some characters without disturbing relative order.',
+       examples:[{input:'text1 = "abcde", text2 = "ace"',output:'3',explain:'"ace" is the LCS'}],
+       constraints:['1 ≤ text1.length, text2.length ≤ 1000'],
+       starter:`def longestCommonSubsequence(text1, text2):\n    # Your solution here\n    pass\n\nprint(longestCommonSubsequence("abcde","ace"))  # 3`},
+      {id:'d4',title:'Coin Change',diff:'Medium',desc:'Given an integer array coins and an integer amount, return the fewest number of coins that you need to make up that amount. If that amount cannot be made return -1.',
+       examples:[{input:'coins = [1,2,5], amount = 11',output:'3',explain:'11 = 5 + 5 + 1'}],
+       constraints:['1 ≤ coins.length ≤ 12','0 ≤ amount ≤ 10⁴'],
+       starter:`def coinChange(coins, amount):\n    # Your solution here\n    pass`},
+      {id:'d5',title:'Minimum Path Sum',diff:'Medium',desc:'Given a m x n grid filled with non-negative numbers, find a path from top left to bottom right which minimizes the sum of all numbers along its path.',
+       examples:[{input:'grid = [[1,3,1],[1,5,1],[4,2,1]]',output:'7'}],
+       constraints:['1 ≤ m, n ≤ 200'],
+       starter:`def minPathSum(grid):\n    # Your solution here\n    pass`},
+    ]
+  },
+  {
+    id:'graphs', name:'Graphs', icon:'🕸️', color:'#a78bfa',
+    problems:[
+      {id:'g1',title:'Number of Islands',diff:'Medium',desc:'Given an m×n grid of "1"s (land) and "0"s (water), count the number of islands. An island is surrounded by water and formed by connecting adjacent lands horizontally or vertically.',
+       examples:[{input:'grid = [["1","1","0"],["0","1","0"],["0","0","1"]]',output:'2'}],
+       constraints:['m, n ≥ 1','grid[i][j] is "0" or "1"'],
+       starter:`def numIslands(grid):\n    # Your solution here\n    pass`},
+      {id:'g2',title:'Clone Graph',diff:'Medium',desc:'Given a reference to a node in a connected undirected graph, return a deep copy (clone) of the graph.',
+       examples:[{input:'adjList = [[2,4],[1,3],[2,4],[1,3]]',output:'[[2,4],[1,3],[2,4],[1,3]]'}],
+       constraints:['0 ≤ number of nodes ≤ 100'],
+       starter:`def cloneGraph(node):\n    # Your solution here\n    pass`},
+      {id:'g3',title:'Course Schedule',diff:'Medium',desc:'Given the number of courses and a list of prerequisites, determine if you can finish all courses (detect cycle / topological order).',
+       examples:[{input:'numCourses = 2, prerequisites = [[1,0]]',output:'true'}],
+       constraints:['1 ≤ numCourses ≤ 10⁵'],
+       starter:`def canFinish(numCourses, prerequisites):\n    # Your solution here\n    pass`},
+      {id:'g4',title:'Shortest Path in Binary Matrix',diff:'Medium',desc:'Given an n x n binary matrix grid, return the length of the shortest clear path from top-left to bottom-right. Return -1 if no such path exists.',
+       examples:[{input:'grid = [[0,1],[1,0]]',output:'2'}],
+       constraints:['1 ≤ n ≤ 100'],
+       starter:`def shortestPathBinaryMatrix(grid):\n    # Your solution here\n    pass`},
+      {id:'g5',title:'Graph Valid Tree',diff:'Medium',desc:'Given n nodes and edges, determine if these edges make up a valid tree (connected and acyclic).',
+       examples:[{input:'n = 5, edges = [[0,1],[0,2],[0,3],[1,4]]',output:'true'}],
+       constraints:['1 ≤ n ≤ 10⁵'],
+       starter:`def validTree(n, edges):\n    # Your solution here\n    pass`},
+    ]
+  },
+  {
+    id:'sorting', name:'Sorting', icon:'🔢', color:'var(--red)',
+    problems:[
+      {id:'so1',title:'Sort Colors',diff:'Medium',desc:'Given an array nums with n objects coloured red (0), white (1), or blue (2), sort them in-place so that objects of the same colour are adjacent, in order 0, 1, 2. You must solve this in one pass.',
+       examples:[{input:'nums = [2,0,2,1,1,0]',output:'[0,0,1,1,2,2]'}],
+       constraints:['n = nums.length','1 ≤ n ≤ 300'],
+       starter:`def sortColors(nums):\n    # Dutch national flag algorithm\n    pass\n\nnums = [2,0,2,1,1,0]\nsortColors(nums)\nprint(nums)  # [0,0,1,1,2,2]`},
+      {id:'so2',title:'Merge Intervals',diff:'Medium',desc:'Given an array of intervals, merge all overlapping intervals and return an array of the non-overlapping intervals that cover all the intervals in the input.',
+       examples:[{input:'intervals = [[1,3],[2,6],[8,10],[15,18]]',output:'[[1,6],[8,10],[15,18]]'}],
+       constraints:['1 ≤ intervals.length ≤ 10⁴'],
+       starter:`def merge(intervals):\n    # Your solution here\n    pass\n\nprint(merge([[1,3],[2,6],[8,10],[15,18]]))  # [[1,6],[8,10],[15,18]]`},
+      {id:'so3',title:'Top K Frequent Elements',diff:'Medium',desc:'Given a non-empty array of integers, return the k most frequent elements.',
+       examples:[{input:'nums = [1,1,1,2,2,3], k = 2',output:'[1,2]'}],
+       constraints:['k is in the range 1..number of unique elements'],
+       starter:`def topKFrequent(nums, k):\n    # Your solution here\n    pass`},
+      {id:'so4',title:'Kth Largest Element in an Array',diff:'Medium',desc:'Find the k-th largest element in an unsorted array.',
+       examples:[{input:'[3,2,1,5,6,4], k=2',output:'5'}],
+       constraints:['1 ≤ k ≤ nums.length'],
+       starter:`def findKthLargest(nums, k):\n    # Your solution here\n    pass`},
+      {id:'so5',title:'Sort Characters by Frequency',diff:'Medium',desc:'Given a string, sort it in decreasing order based on the frequency of characters.',
+       examples:[{input:'"tree"',output:'"eert" or "eetr"'}],
+       constraints:['1 ≤ s.length ≤ 5×10⁵'],
+       starter:`def frequencySort(s):\n    # Your solution here\n    pass`},
+    ]
+  },
+  {
+    id:'linked', name:'Linked Lists', icon:'🔗', color:'var(--green)',
+    problems:[
+      {id:'l1',title:'Reverse Linked List',diff:'Easy',desc:'Given the head of a singly linked list, reverse the list and return the reversed list.',
+       examples:[{input:'head = [1,2,3,4,5]',output:'[5,4,3,2,1]'}],
+       constraints:['0 ≤ nodes ≤ 5000','-5000 ≤ Node.val ≤ 5000'],
+       starter:`class ListNode:\n    def __init__(self, val=0, next=None):\n        self.val = val\n        self.next = next\n\ndef reverseList(head):\n    # Your solution here\n    pass`},
+      {id:'l2',title:'Detect Cycle in Linked List',diff:'Easy',desc:'Given head of a linked list, determine if the linked list has a cycle in it. Return true if there is a cycle, false otherwise. Use O(1) memory.',
+       examples:[{input:'head = [3,2,0,-4], pos = 1',output:'true',explain:'Tail connects to node at index 1'}],
+       constraints:['0 ≤ nodes ≤ 10⁴'],
+       starter:`def hasCycle(head):\n    # Hint: Floyd's tortoise and hare algorithm\n    pass`},
+      {id:'l3',title:'Merge Two Sorted Lists',diff:'Easy',desc:'Merge two sorted linked lists and return it as a sorted list.',
+       examples:[{input:'l1 = [1,2,4], l2 = [1,3,4]',output:'[1,1,2,3,4,4]'}],
+       constraints:['0 ≤ nodes ≤ 50'],
+       starter:`def mergeTwoLists(l1, l2):\n    # Your solution here\n    pass`},
+      {id:'l4',title:'Remove Nth Node From End of List',diff:'Medium',desc:'Given the head of a linked list, remove the n-th node from the end of list and return its head.',
+       examples:[{input:'head = [1,2,3,4,5], n = 2',output:'[1,2,3,5]'}],
+       constraints:['1 ≤ n ≤ nodes'],
+       starter:`def removeNthFromEnd(head, n):\n    # Your solution here\n    pass`},
+      {id:'l5',title:'Add Two Numbers',diff:'Medium',desc:'You are given two non-empty linked lists representing two non-negative integers. Add the two numbers and return the sum as a linked list.',
+       examples:[{input:'[2,4,3] + [5,6,4]',output:'[7,0,8]'}],
+       constraints:['Each node contains a single digit'],
+       starter:`def addTwoNumbers(l1, l2):\n    # Your solution here\n    pass`},
+    ]
+  },
+  {
+    id:'recursion', name:'Recursion', icon:'🔄', color:'var(--amber)',
+    problems:[
+      {id:'r1',title:'Generate Parentheses',diff:'Medium',desc:'Given n pairs of parentheses, write a function to generate all combinations of well-formed parentheses.',
+       examples:[{input:'n = 3',output:'["((()))","(()())","(())()","()(())","()()()"]'}],
+       constraints:['1 ≤ n ≤ 8'],
+       starter:`def generateParenthesis(n):\n    result = []\n    # Your backtracking solution here\n    return result\n\nprint(generateParenthesis(3))`},
+      {id:'r2',title:'Subsets',diff:'Medium',desc:'Given an integer array nums of unique elements, return all possible subsets (the power set). The solution set must not contain duplicate subsets.',
+       examples:[{input:'nums = [1,2,3]',output:'[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]'}],
+       constraints:['1 ≤ nums.length ≤ 10'],
+       starter:`def subsets(nums):\n    result = [[]]\n    # Your solution here\n    return result\n\nprint(subsets([1,2,3]))`},
+      {id:'r3',title:'Permutations',diff:'Medium',desc:'Given a collection of distinct integers, return all possible permutations.',
+       examples:[{input:'[1,2,3]',output:'[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]'}],
+       constraints:['1 ≤ nums.length ≤ 6'],
+       starter:`def permute(nums):\n    # Backtracking solution\n    pass`},
+      {id:'r4',title:'Combination Sum',diff:'Medium',desc:'Given an array of distinct integers candidates and a target, return all unique combinations of candidates where the numbers sum to target.',
+       examples:[{input:'candidates = [2,3,6,7], target = 7',output:'[[7],[2,2,3]]'}],
+       constraints:['1 ≤ candidates.length ≤ 30'],
+       starter:`def combinationSum(candidates, target):\n    # Backtracking solution\n    pass`},
+      {id:'r5',title:'Unique Binary Search Trees',diff:'Medium',desc:'Given n, return the number of structurally unique BSTs which have exactly n nodes of unique values 1..n.',
+       examples:[{input:'n = 3',output:'5'}],
+       constraints:['1 ≤ n ≤ 19'],
+       starter:`def numTrees(n):\n    # DP/recurrence solution\n    pass`},
+    ]
+  },
+  {
+    id:'programs', name:'Programs', icon:'🧩', color:'#0ea5a4',
+    problems:[
+      {id:'p1',title:'Median of Two Sorted Arrays',diff:'Hard',desc:'Given two sorted arrays nums1 and nums2 of sizes m and n, return the median of the two sorted arrays. Aim for O(log(m+n)) time.',
+       examples:[{input:'nums1 = [1,3], nums2 = [2]',output:'2.0'},{input:'nums1 = [1,2], nums2 = [3,4]',output:'2.5'}],
+       constraints:['0 ≤ m, n ≤ 10⁶'],
+       starter:`def findMedianSortedArrays(nums1, nums2):\n    # Your solution here\n    pass`},
+
+      {id:'p2',title:'Sliding Window Maximum',diff:'Hard',desc:'Given an array nums and sliding window size k, return an array of the maximums for each window position.',
+       examples:[{input:'nums = [1,3,-1,-3,5,3,6,7], k = 3',output:'[3,3,5,5,6,7]'}],
+       constraints:['1 ≤ k ≤ nums.length ≤ 10⁵'],
+       starter:`def maxSlidingWindow(nums, k):\n    # Your solution here\n    pass`},
+
+      {id:'p3',title:'Word Ladder',diff:'Hard',desc:'Given beginWord, endWord and a wordList, return the length of the shortest transformation sequence from beginWord to endWord. Each transformed word must exist in wordList and only one letter can be changed at a time.',
+       examples:[{input:'beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log","cog"]',output:'5'}],
+       constraints:['1 ≤ wordList.length ≤ 5×10³'],
+       starter:`def ladderLength(beginWord, endWord, wordList):\n    # Your solution here\n    pass`},
+
+      {id:'p4',title:'Regular Expression Matching',diff:'Hard',desc:'Implement regular expression matching with support for "." and "*". Return true if the string matches the pattern.',
+       examples:[{input:'s = "aab", p = "c*a*b"',output:'true'}],
+       constraints:['0 ≤ s.length, p.length ≤ 1000'],
+       starter:`def isMatch(s, p):\n    # Your solution here\n    pass`},
+
+      {id:'p5',title:'LFU Cache',diff:'Hard',desc:'Design and implement a data structure for Least Frequently Used (LFU) cache. It should support get and put operations in O(1) average time.',
+       examples:[{input:'Operations: put(1,1), put(2,2), get(1), put(3,3)...',output:'See expected behaviour'},
+       ],
+       constraints:['Capacity ≥ 0','Total operations ≤ 10⁵'],
+       starter:`class LFUCache:\n    def __init__(self, capacity):\n        # init\n        pass\n    def get(self, key):\n        pass\n    def put(self, key, value):\n        pass`},
+
+      {id:'p6',title:'Maximum Rectangle in Histogram',diff:'Hard',desc:'Given an array of integers representing histogram bar heights, return the area of the largest rectangle in the histogram.',
+       examples:[{input:'heights = [2,1,5,6,2,3]',output:'10'}],
+       constraints:['1 ≤ heights.length ≤ 10⁵'],
+       starter:`def largestRectangleArea(heights):\n    # Your solution here\n    pass`},
+
+      {id:'p7',title:'Find Median from Data Stream',diff:'Hard',desc:'The data structure supports adding numbers and querying the median of all elements seen so far.',
+       examples:[{input:'addNum(1), addNum(2), findMedian() -> 1.5',output:'1.5'}],
+       constraints:['Total operations ≤ 10⁵'],
+       starter:`class MedianFinder:\n    def __init__(self):\n        pass\n    def addNum(self, num):\n        pass\n    def findMedian(self):\n        pass`},
+
+      {id:'p8',title:'N-Queens',diff:'Hard',desc:'Place n queens on an n×n chessboard so that no two queens attack each other. Return all distinct solutions.',
+       examples:[{input:'n = 4',output:'[[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]'}],
+       constraints:['1 ≤ n ≤ 9'],
+       starter:`def solveNQueens(n):\n    # Backtracking solution\n    pass`},
+
+      {id:'p9',title:'Palindrome Pairs',diff:'Hard',desc:'Given a list of unique words, return all pairs of distinct indices (i, j) such that words[i] + words[j] forms a palindrome.',
+       examples:[{input:'["bat","tab","cat"]',output:'[[0,1],[1,0]]'}],
+       constraints:['1 ≤ words.length ≤ 5×10³'],
+       starter:`def palindromePairs(words):\n    # Your solution here\n    pass`},
+
+      {id:'p10',title:'Minimum Window Subsequence',diff:'Medium',desc:'Given strings s and t, find the minimum (contiguous) substring of s so that t is a subsequence of it. Return the substring or "" if none exists.',
+       examples:[{input:'s = "abcdebdde", t = "bde"',output:'"bcde"'}],
+       constraints:['1 ≤ s.length ≤ 5×10⁴','1 ≤ t.length ≤ 100'],
+       starter:`def minWindowSubsequence(s, t):\n    # Your solution here\n    pass`},
+    ]
+  },
+];
+
+const COMPANY_DATA = {
+  google:    {icon:'🔍',title:'Google',tag:'FAANG · Algorithms',tagBg:'var(--amber-bg)',tagC:'var(--amber)',desc:'Google interviews are algorithm-heavy. Expect 4–5 rounds of LeetCode-style problems focused on data structures, graph traversal, and dynamic programming. System design is required for senior roles. Strong emphasis on time/space complexity analysis. Process typically takes 4–6 weeks.'},
+  meta:      {icon:'🌐',title:'Meta',tag:'FAANG · Arrays & Graphs',tagBg:'var(--blue-bg)',tagC:'var(--blue)',desc:'Meta focuses on arrays, strings, and graph problems. They value speed and clean code. Expect 2 coding rounds plus a system design and behavioural interview. Product sense is tested — show you understand why algorithms matter in a real product. Process takes 3–4 weeks.'},
+  amazon:    {icon:'📦',title:'Amazon',tag:'FAANG · Leadership Principles',tagBg:'var(--orange)',tagC:'#fff',desc:'Amazon pairs algorithmic rounds heavily with behavioural questions based on their 16 Leadership Principles. Tree problems and system design (for distributed systems) are especially common. Prepare STAR stories. OA (online assessment) is the first filter — usually 2 LeetCode problems timed.'},
+  apple:     {icon:'🍎',title:'Apple',tag:'FAANG · Strings & Arrays',tagBg:'var(--bg3)',tagC:'var(--text)',desc:'Apple interviews are thorough and methodical. Expect multiple rounds with different team members across several days. String manipulation, array problems, and OOP design are common. They care deeply about code quality and documentation. Culture fit is heavily weighted.'},
+  microsoft: {icon:'🪟',title:'Microsoft',tag:'FAANG · Trees & DP',tagBg:'var(--blue-bg)',tagC:'var(--blue)',desc:'Microsoft tends toward tree traversal, dynamic programming, and object-oriented design. Interviews are generally more conversational than Google/Meta — interviewers guide you. They value clear communication and problem decomposition. Strong behavioural component around collaboration.'},
+  netflix:   {icon:'🎬',title:'Netflix',tag:'Top Tech · System Design',tagBg:'var(--red-bg)',tagC:'var(--red)',desc:'Netflix interviews are predominantly system design focused, even for junior engineers. They expect you to think at scale — billions of users, millions of concurrent streams. Algorithmic rounds are standard LeetCode-style. The culture is high performance — they pay top of market and expect top output.'},
+  stripe:    {icon:'💳',title:'Stripe',tag:'Fintech · APIs & Reliability',tagBg:'var(--blue-bg)',tagC:'var(--blue)',desc:'Stripe interviews place heavy emphasis on API design, distributed systems, and fault tolerance. Expect questions around idempotency, payment retries, and handling partial failures gracefully. Coding rounds cover standard data structures but lean toward real-world simulation problems. Engineers must demonstrate strong attention to correctness and edge cases. Process typically spans 4–5 rounds including a take-home project.'},
+  uber:      {icon:'🚗',title:'Uber',tag:'Top Tech · Graphs & Geo',tagBg:'var(--green-bg)',tagC:'var(--green)',desc:'Uber interviews focus heavily on graph algorithms, geospatial problems, and real-time systems. Expect shortest-path problems (Dijkstra, BFS/DFS), matching algorithms, and surge pricing simulations. System design rounds often revolve around ride dispatch, mapping, and high-throughput event streams. Backend scalability is a major theme. Process takes 3–5 weeks with an online assessment as the initial filter.'},
+  airbnb:    {icon:'🏠',title:'Airbnb',tag:'Top Tech · OOP & Search',tagBg:'var(--amber-bg)',tagC:'var(--amber)',desc:'Airbnb places strong weight on object-oriented design and search/ranking problems. Coding rounds often feature inventory management, calendar conflict detection, and recommendation systems. They value clean, readable code over micro-optimisations. Expect a system design round covering search ranking or booking workflows, plus a cultural-fit interview around their core values. Process is typically 3–4 rounds.'},
+  salesforce:{icon:'☁️',title:'Salesforce',tag:'Enterprise · DB & Scalability',tagBg:'var(--bg3)',tagC:'var(--text)',desc:'Salesforce interviews cover database design, query optimisation, and cloud-scale architecture. Coding rounds test standard algorithms but lean toward practical engineering scenarios — data pipelines, multi-tenant storage, and API integrations. System design questions often involve CRM workflows, large-scale reporting, and event-driven architectures. Behavioural rounds are significant; they strongly evaluate alignment with their Ohana culture values.'},
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let solved   = [];
+let curTopic = null;
+let curProb  = 0;
+let slide    = 0;
+
+function solvedKey(){
+  try{
+    const s = JSON.parse(localStorage.getItem('cf_session')||'null');
+    return s ? 'cf_solved_'+s.email : 'cf_solved_guest';
+  }catch(e){ return 'cf_solved_guest'; }
+}
+function loadSolved(){
+  try{ solved = JSON.parse(localStorage.getItem(solvedKey())||'[]'); }
+  catch(e){ solved = []; }
+}
+function saveSolved(){ localStorage.setItem(solvedKey(), JSON.stringify(solved)); }
+
+// ═══════════════════════════════════════
+// VIEWS
+// ═══════════════════════════════════════
+function showPractice(){
+  const session = getSession();
+  if(!session){ doLogout(); return; }
+  document.getElementById('landing').classList.remove('active');
+  document.getElementById('practice').classList.add('active');
+  renderSidebar();
+  if(!curTopic) selectTopic(TOPICS[0].id);
+}
+function showLanding(){
+  const session = getSession();
+  if(!session){ doLogout(); return; }
+  document.getElementById('practice').classList.remove('active');
+  document.getElementById('landing').classList.add('active');
+  renderLandingTopics();
+}
+
+// ═══════════════════════════════════════
+// GREETING
+// ═══════════════════════════════════════
+function getGreeting(){
+  const h = new Date().getHours();
+  if(h<12) return '☀️ Good morning — ready to grind?';
+  if(h<17) return '⚡ Good afternoon — stay focused.';
+  return '🌙 Good evening — late night practice!';
+}
+document.getElementById('hero-greeting').textContent = getGreeting();
+document.getElementById('p-greeting').textContent = getGreeting();
+
+// ═══════════════════════════════════════
+// HAMBURGER
+// ═══════════════════════════════════════
+function toggleMob(){ document.getElementById('mobNav').classList.toggle('open'); }
+function closeMob(){ document.getElementById('mobNav').classList.remove('open'); }
+
+// ═══════════════════════════════════════
+// LANDING TOPICS
+// ═══════════════════════════════════════
+function renderLandingTopics(){
+  const el = document.getElementById('landing-topics');
+  if(!el) return;
+  el.innerHTML = TOPICS.map(t=>{
+    const done = t.problems.filter(p=>solved.includes(p.id)).length;
+    const pct  = Math.round((done/t.problems.length)*100);
+    const isDone = done===t.problems.length;
+    return `<div class="topic-card ${isDone?'done':''}" onclick="showPractice();selectTopic('${t.id}')">
+      <div class="topic-icon">${t.icon}</div>
+      <div class="topic-name">${t.name}</div>
+      <div class="topic-count">${done}/${t.problems.length} solved</div>
+      <div class="topic-badge" style="background:${isDone?'var(--green-bg)':'var(--amber-bg)'};color:${isDone?'var(--green)':'var(--amber)'};">${isDone?'✓ Complete':`${pct}%`}</div>
+    </div>`;
+  }).join('');
+}
+renderLandingTopics();
+
+// ═══════════════════════════════════════
+// SLIDESHOW
+// ═══════════════════════════════════════
+const slides = document.querySelectorAll('.slide');
+const dots   = document.querySelectorAll('.s-dot');
+function goSlide(n){
+  slides[slide].classList.remove('active');
+  dots[slide].classList.remove('active');
+  slide = n;
+  slides[slide].classList.add('active');
+  dots[slide].classList.add('active');
+}
+setInterval(()=>goSlide((slide+1)%slides.length), 6000);
+
+// ═══════════════════════════════════════
+// LIGHTBOX
+// ═══════════════════════════════════════
+function openLb(key){
+  const d = COMPANY_DATA[key];
+  document.getElementById('lb-icon').textContent  = d.icon;
+  document.getElementById('lb-title').textContent = d.title;
+  document.getElementById('lb-desc').textContent  = d.desc;
+  const tag = document.getElementById('lb-tag');
+  tag.textContent = d.tag;
+  tag.style.background = d.tagBg;
+  tag.style.color = d.tagC;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLb(){ document.getElementById('lightbox').classList.remove('open'); }
+function closeLbOut(e){ if(e.target.id==='lightbox') closeLb(); }
+
+// ═══════════════════════════════════════
+// MOOD
+// ═══════════════════════════════════════
+function pickMood(btn, msg){
+  document.querySelectorAll('.m-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mood-msg').textContent = msg;
+}
+
+// ═══════════════════════════════════════
+// CALCULATOR
+// ═══════════════════════════════════════
+function runCalc(){
+  const easy = parseInt(document.getElementById('c-easy').value)||0;
+  const med  = parseInt(document.getElementById('c-med').value)||0;
+  const hard = parseInt(document.getElementById('c-hard').value)||0;
+  const days = parseInt(document.getElementById('c-days').value)||1;
+  const total = easy + med + hard;
+  if(!total){ alert('Enter at least one solved problem.'); return; }
+  const score = Math.min(100, Math.round((easy*1 + med*2.5 + hard*5) / 1.5));
+  const daily = (total/days).toFixed(1);
+  document.getElementById('r-score').textContent = score+'%';
+  document.getElementById('r-total').textContent = total;
+  document.getElementById('r-daily').textContent = daily;
+  document.getElementById('calc-res').classList.add('show');
+}
+
+// ═══════════════════════════════════════
+// FORM
+// ═══════════════════════════════════════
+function submitForm(){
+  const name = document.getElementById('ff-name').value.trim();
+  const co   = document.getElementById('ff-company').value.trim();
+  const lvl  = document.getElementById('ff-level').value;
+  if(!name||!co||!lvl){ alert('Please fill in name, company, and level.'); return; }
+  localStorage.setItem('cf_user', JSON.stringify({name,company:co,level:lvl,date:document.getElementById('ff-date').value,notes:document.getElementById('ff-notes').value}));
+  const ok = document.getElementById('f-ok');
+  ok.style.display='block';
+  setTimeout(()=>{ ok.style.display='none'; showPractice(); }, 1800);
+}
+
+// ═══════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════
+// ═══════════════════════════════════════
+// DIFFICULTY FILTER
+// ═══════════════════════════════════════
+let curDiffFilter = 'all';
+
+function setDiffFilter(diff){
+  curDiffFilter = diff;
+  // Update button active states
+  const map = { all:'df-all', Easy:'df-easy', Medium:'df-medium', Hard:'df-hard' };
+  const classMap = { Easy:'active-easy', Medium:'active-medium', Hard:'active-hard' };
+  Object.keys(map).forEach(k => {
+    const btn = document.getElementById(map[k]);
+    if(!btn) return;
+    btn.className = 'diff-btn' + (k === diff ? (' ' + (classMap[k] || 'active-easy')) : '');
+    if(k === 'all' && diff === 'all') btn.style.cssText = 'background:var(--bg3);border-color:var(--amber);color:var(--amber);flex:1;';
+    else if(k === 'all') btn.style.cssText = '';
+  });
+  // If search is active, re-run search; otherwise re-render sidebar
+  const q = document.getElementById('prob-search')?.value || '';
+  if(q.trim()) searchProblems(q);
+  else renderSidebar();
+}
+
+function renderSidebar(){
+  const total = TOPICS.reduce((a,t)=>a+t.problems.length,0);
+  const done  = solved.length;
+  const pct   = Math.round((done/total)*100);
+  document.getElementById('sb-pct').textContent   = pct+'%';
+  document.getElementById('sb-fill').style.width  = pct+'%';
+
+  // Build sidebar respecting diff filter
+  let html = '';
+  TOPICS.forEach(t => {
+    const filteredProbs = curDiffFilter === 'all'
+      ? t.problems
+      : t.problems.filter(p => p.diff === curDiffFilter);
+    if(!filteredProbs.length) return;
+
+    const tDone = filteredProbs.filter(p=>solved.includes(p.id)).length;
+    const isActive = curTopic===t.id;
+    const isDone = tDone===filteredProbs.length;
+
+    html += `<button class="sb-topic-btn ${isActive?'active':''} ${isDone?'done':''}" onclick="selectTopic('${t.id}')">
+      <span class="sb-topic-icon">${t.icon}</span>
+      ${t.name}
+      <span class="sb-topic-right">
+        <span class="sb-topic-count">${tDone}/${filteredProbs.length}</span>
+        ${isDone?'<span class="sb-topic-check">✓</span>':''}
+      </span>
+    </button>`;
+  });
+
+  if(!html) html = '<div style="padding:16px;font-size:12px;color:var(--muted);text-align:center;">No problems at this difficulty</div>';
+  document.getElementById('sb-topics').innerHTML = html;
+
+  // Keep filter button active state correct on re-render
+  const map = { all:'df-all', Easy:'df-easy', Medium:'df-medium', Hard:'df-hard' };
+  const classMap = { Easy:'active-easy', Medium:'active-medium', Hard:'active-hard' };
+  Object.keys(map).forEach(k => {
+    const btn = document.getElementById(map[k]);
+    if(!btn) return;
+    btn.className = 'diff-btn' + (k === curDiffFilter ? (' ' + (classMap[k] || '')) : '');
+    if(k === 'all' && curDiffFilter === 'all') btn.style.cssText = 'background:var(--bg3);border-color:var(--amber);color:var(--amber);flex:1;';
+    else if(k === 'all') btn.style.cssText = '';
+  });
+}
+
+// ═══════════════════════════════════════
+// TOPIC & PROBLEM SELECTION
+// ═══════════════════════════════════════
+function selectTopic(id){
+  curTopic = id;
+  curProb  = 0;
+  renderSidebar();
+  loadProblem();
+}
+
+function loadProblem(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  const prob = topic.problems[curProb];
+
+  // Header
+  document.getElementById('pm-title').textContent = prob.title;
+  const diff = document.getElementById('pm-diff');
+  diff.textContent = prob.diff;
+  diff.style.background = prob.diff==='Easy'?'var(--green-bg)':prob.diff==='Medium'?'var(--amber-bg)':'var(--red-bg)';
+  diff.style.color = prob.diff==='Easy'?'var(--green)':prob.diff==='Medium'?'var(--amber)':'var(--red)';
+
+  // Counter
+  document.getElementById('prob-counter').textContent = `${curProb+1} / ${topic.problems.length}`;
+
+  // Mark done button
+  const md = document.getElementById('mark-done');
+  if(solved.includes(prob.id)){
+    md.classList.add('marked'); md.textContent='✓ Solved';
+  } else {
+    md.classList.remove('marked'); md.textContent='✓ Mark Solved';
+  }
+
+  // Problem description
+  document.getElementById('pm-problem').innerHTML = `
+    <div class="prob-section-title">Problem</div>
+    <div class="prob-desc">${prob.desc}</div>
+    <div class="prob-section-title">Examples</div>
+    <div class="prob-examples">
+      ${prob.examples.map((ex,i)=>`
+        <div class="ex-box">
+          <div class="ex-label">Example ${i+1}</div>
+          <div class="ex-line"><span class="ex-key">Input:</span> ${ex.input}</div>
+          <div class="ex-line"><span class="ex-key">Output:</span> ${ex.output}</div>
+          ${ex.explain?`<div class="ex-line"><span class="ex-key">Explanation:</span> ${ex.explain}</div>`:''}
+        </div>`).join('')}
+    </div>
+    <div class="prob-section-title">Constraints</div>
+    <div class="prob-constraints"><ul>${prob.constraints.map(c=>`<li>${c}</li>`).join('')}</ul></div>
+  `;
+
+  // Editor — set Monaco or fallback textarea
+  const starterCode = prob.starter;
+  if(monacoEditor){
+    monacoEditor.setValue(starterCode);
+    monacoEditor.setScrollPosition({ scrollTop: 0 });
+  } else {
+    document.getElementById('code-editor').value = starterCode;
+  }
+  document.getElementById('out-body').textContent = '// Click ▶ Run Code to execute your solution with real Python';
+  document.getElementById('out-status').textContent = '';
+  document.getElementById('out-status').style.color = '';
+
+  // Reset timer, hints, notes
+  resetTimer();
+  startTimer();
+  const hp = document.getElementById('hint-panel');
+  if(hp) hp.classList.remove('show');
+  curHintIdx = 0;
+  loadNotes();
+}
+
+function prevProb(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  curProb = (curProb-1+topic.problems.length)%topic.problems.length;
+  loadProblem();
+}
+function nextProb(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  curProb = (curProb+1)%topic.problems.length;
+  loadProblem();
+}
+function markDone(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  const prob = topic.problems[curProb];
+  const wasUnsolved = !solved.includes(prob.id);
+  const id = prob.id;
+  if(!solved.includes(id)){ solved.push(id); } else { solved=solved.filter(s=>s!==id); }
+  saveSolved();
+  renderSidebar();
+  renderLandingTopics();
+  const md = document.getElementById('mark-done');
+  if(solved.includes(id)){ md.classList.add('marked'); md.textContent='✓ Solved'; }
+  else { md.classList.remove('marked'); md.textContent='✓ Mark Solved'; }
+  // Confetti for Hard problems
+  if(wasUnsolved && solved.includes(id) && prob.diff === 'Hard'){
+    launchConfetti();
+  }
+}
+
+// ═══════════════════════════════════════
+// RUN CODE — Real execution via Piston API
+// ═══════════════════════════════════════
+const PISTON_RUNTIMES = {
+  python:     { language: 'python',     version: '3.10.0' },
+  javascript: { language: 'javascript', version: '18.15.0' },
+  java:       { language: 'java',       version: '15.0.2' },
+  cpp:        { language: 'c++',        version: '10.2.0' },
+};
+
+function executeLocalPython(code){
+  return new Promise((resolve, reject) => {
+    if(typeof Sk === 'undefined' || typeof Sk.importMainWithBody !== 'function'){
+      return reject(new Error('Local Python engine is unavailable.'));
+    }
+    let output = '';
+    function outf(text){ output += text; }
+    function builtinRead(x){
+      if(Sk.builtinFiles === undefined || Sk.builtinFiles['files'][x] === undefined){
+        throw new Error('File not found: ' + x);
+      }
+      return Sk.builtinFiles['files'][x];
+    }
+    Sk.configure({ output:outf, read:builtinRead, inputfun:() => '' });
+    Sk.misceval.asyncToPromise(() => Sk.importMainWithBody('<stdin>', false, code, true))
+      .then(() => resolve(output || '(no output)'))
+      .catch(reject);
+  });
+}
+function executeLocalJavaScript(code){
+  let output = '';
+  const oldLog = console.log;
+  console.log = (...args) => { output += args.map(String).join(' ') + '\n'; };
+  try {
+    const result = eval(code);
+    if(result !== undefined && result !== null){
+      output += String(result);
+    }
+    return output.trim() || '(no output)';
+  } catch(err){
+    throw err;
+  } finally {
+    console.log = oldLog;
+  }
+}
+
+async function runCode(){
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Running...';
+  const out  = document.getElementById('out-body');
+  const stat = document.getElementById('out-status');
+
+  // Get code from Monaco editor
+  const code = monacoEditor ? monacoEditor.getValue() : document.getElementById('code-editor').value;
+  const lang = document.getElementById('lang-select').value;
+  const runtime = PISTON_RUNTIMES[lang] || PISTON_RUNTIMES.python;
+
+  out.textContent = '⏳ Executing your code...';
+  stat.textContent = '';
+  stat.style.color = '';
+
+  try {
+    const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: runtime.language,
+        version: runtime.version,
+        files: [{ name: 'solution', content: code }],
+        stdin: '',
+        args: [],
+        compile_timeout: 10000,
+        run_timeout: 5000,
+      })
+    });
+
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('API_UNAUTHORIZED');
+      }
+      throw new Error(`API error: ${res.status}`);
+    }
+    const data = await res.json();
+
+    const stdout = data.run?.stdout || '';
+    const stderr = data.run?.stderr || '';
+    const compile_err = data.compile?.stderr || '';
+    const exitCode = data.run?.code ?? 0;
+
+    if (compile_err) {
+      out.textContent = '⚠ Compilation Error:\n\n' + compile_err;
+      stat.textContent = '✗ Compile error';
+      stat.style.color = 'var(--red)';
+    } else if (stderr && !stdout) {
+      out.textContent = '⚠ Runtime Error:\n\n' + stderr;
+      stat.textContent = '✗ Runtime error';
+      stat.style.color = 'var(--red)';
+    } else if (exitCode !== 0 && !stdout) {
+      out.textContent = '⚠ Process exited with code ' + exitCode + '\n\n' + (stderr || '');
+      stat.textContent = '✗ Exited: ' + exitCode;
+      stat.style.color = 'var(--red)';
+    } else {
+      const combined = [stdout, stderr].filter(Boolean).join('\n--- stderr ---\n');
+      out.textContent = combined || '(no output)';
+      stat.textContent = exitCode === 0 ? '✓ Executed successfully' : `⚠ Exited: ${exitCode}`;
+      stat.style.color = exitCode === 0 ? 'var(--green)' : 'var(--amber)';
+    }
+  } catch(e) {
+    const canRunLocal = lang === 'python' || lang === 'javascript';
+    if (canRunLocal && (e.message === 'API_UNAUTHORIZED' || e.message.includes('Network') || e.message.includes('Failed to fetch') || e.message.includes('fetch'))){
+      try {
+        out.textContent = `⏳ Piston unavailable — running ${lang === 'python' ? 'Python' : 'JavaScript'} locally...`;
+        let localResult;
+        if (lang === 'python') {
+          localResult = await executeLocalPython(code);
+        } else {
+          localResult = executeLocalJavaScript(code);
+        }
+        out.textContent = localResult || '(no output)';
+        stat.textContent = '✓ Executed locally';
+        stat.style.color = 'var(--green)';
+        btn.disabled = false;
+        btn.innerHTML = '▶ Run Code';
+        return;
+      } catch(localErr){
+        e = localErr;
+      }
+    }
+    out.textContent = '⚠ Could not reach the execution server.\n\nCheck your internet connection, or try again in a moment.\n\nError: ' + e.message;
+    stat.textContent = '✗ Network error';
+    stat.style.color = 'var(--red)';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '▶ Run Code';
+}
+
+// ═══════════════════════════════════════
+// AI REVIEW
+// ═══════════════════════════════════════
+async function getAIReview(){
+  const code  = (monacoEditor ? monacoEditor.getValue() : document.getElementById('code-editor').value).trim();
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  const prob  = topic?.problems[curProb];
+  if(!prob){ alert('Select a problem first.'); return; }
+  if(code.length < 50){ alert('Write your solution first before requesting a review.'); return; }
+
+  const btn = document.getElementById('ai-btn');
+  btn.disabled = true;
+  document.getElementById('ai-modal').classList.add('open');
+  document.getElementById('ai-modal-sub').textContent = `Reviewing: ${prob.title}`;
+  document.getElementById('ai-content').innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div>Sending to AI engine...</div>';
+
+  const prompt = `You are an expert software engineer and coding interview coach reviewing a student's solution.
+
+Problem: "${prob.title}" (${prob.diff})
+Description: ${prob.desc}
+
+Student's code:
+\`\`\`python
+${code}
+\`\`\`
+
+Please provide a thorough code review with these exact sections:
+1. SCORE: Give a score out of 100 (just the number)
+2. VERDICT: One sentence summary (pass/needs work/excellent)
+3. CORRECTNESS: Is the logic correct? What test cases would pass or fail?
+4. TIME COMPLEXITY: What is the time complexity and why?
+5. SPACE COMPLEXITY: What is the space complexity and why?
+6. STRENGTHS: What did the student do well? (2-3 points)
+7. IMPROVEMENTS: What could be better? (2-3 specific suggestions)
+8. OPTIMAL APPROACH: Brief description of the optimal solution if theirs isn't optimal.
+
+Be specific, educational, and encouraging. Format each section clearly with the section name in caps followed by a colon.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20260514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('') || '';
+
+    // Parse score
+    const scoreMatch = text.match(/SCORE[:\s]+(\d+)/i);
+    const score = scoreMatch ? parseInt(scoreMatch[1]) : null;
+    const scoreColor = score>=80?'var(--green)':score>=60?'var(--amber)':'var(--red)';
+
+    const formatted = text
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/SCORE[:\s]+\d+[^\n]*/i,'')
+      .replace(/(VERDICT|CORRECTNESS|TIME COMPLEXITY|SPACE COMPLEXITY|STRENGTHS|IMPROVEMENTS|OPTIMAL APPROACH):/gi,
+        '<div class="ai-section-label">$1</div>')
+      .replace(/\n\n/g,'</div><div class="ai-section">')
+      .replace(/\n/g,'<br>');
+
+    document.getElementById('ai-content').innerHTML = `
+      ${score!==null?`<div class="ai-score" style="color:${scoreColor}">${score}<span style="font-size:20px;color:var(--muted)">/100</span></div>`:''}
+      <div class="ai-response"><div class="ai-section">${formatted}</div></div>`;
+  } catch(e){
+    document.getElementById('ai-content').innerHTML = `
+      <div class="ai-section">
+        <div class="ai-section-label">Review</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.8;">
+          AI review is unavailable right now. Here are general tips for <strong style="color:var(--amber)">${prob.title}</strong>:<br><br>
+          • Make sure you handle edge cases: empty input, single element, duplicate values.<br>
+          • State your time and space complexity before finishing.<br>
+          • ${prob.diff==='Easy'?'For Easy problems, aim for O(n) time and clean readable code.':prob.diff==='Medium'?'For Medium problems, consider if a hash map or two-pointer approach can reduce complexity.':'For Hard problems, think about whether DP, divide-and-conquer, or monotonic stack applies.'}<br>
+          • Test your solution on the given examples by hand before submitting.
+        </p>
+      </div>`;
+  }
+  btn.disabled = false;
+}
+function closeAI(){ document.getElementById('ai-modal').classList.remove('open'); }
+document.getElementById('ai-modal').addEventListener('click',e=>{ if(e.target.id==='ai-modal') closeAI(); });
+
+// ═══════════════════════════════════════
+// MONACO EDITOR INIT
+// ═══════════════════════════════════════
+let monacoEditor = null;
+
+const LANG_STARTERS = {
+  javascript: (pyStarter) => {
+    // Convert python starter comments to JS style
+    return pyStarter
+      .replace(/^#/gm, '//')
+      .replace(/def (\w+)\((.*?)\):/g, 'function $1($2) {')
+      .replace(/    pass/g, '  // your solution here\n}')
+      .replace(/print\(/g, 'console.log(')
+      .replace(/True/g,'true').replace(/False/g,'false').replace(/None/g,'null');
+  },
+  java: (pyStarter) => {
+    return `// Java solution\nimport java.util.*;\n\npublic class Solution {\n    // Translate Python logic to Java here\n    public static void main(String[] args) {\n        // test your solution\n    }\n}`;
+  },
+  cpp: (pyStarter) => {
+    return `// C++ solution\n#include <bits/stdc++.h>\nusing namespace std;\n\n// Translate Python logic to C++ here\nint main() {\n    // test your solution\n    return 0;\n}`;
+  },
+};
+
+function initMonaco(){
+  // Disable blob workers — required for sandboxed origins like claudeusercontent.com
+  window.MonacoEnvironment = { getWorker: function() { return null; } };
+  require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+  require(['vs/editor/editor.main'], function() {
+    const isDark = !document.body.classList.contains('light');
+
+    monaco.editor.defineTheme('codeforge-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '5a5450', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'f59e0b' },
+        { token: 'string', foreground: '10b981' },
+        { token: 'number', foreground: 'f97316' },
+        { token: 'type', foreground: '3b82f6' },
+        { token: 'function', foreground: 'fbbf24' },
+      ],
+      colors: {
+        'editor.background': '#1a1815',
+        'editor.foreground': '#f0ebe3',
+        'editor.lineHighlightBackground': '#201e1a',
+        'editor.selectionBackground': '#f59e0b33',
+        'editorLineNumber.foreground': '#3a3530',
+        'editorLineNumber.activeForeground': '#8a8178',
+        'editorCursor.foreground': '#f59e0b',
+        'editor.inactiveSelectionBackground': '#f59e0b1a',
+        'editorIndentGuide.background': '#272420',
+        'editorIndentGuide.activeBackground': '#3a3530',
+      }
+    });
+
+    monaco.editor.defineTheme('codeforge-light', {
+      base: 'vs',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: 'a09d98', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'd97706' },
+        { token: 'string', foreground: '059669' },
+        { token: 'number', foreground: 'ea580c' },
+      ],
+      colors: {
+        'editor.background': '#ffffff',
+        'editor.foreground': '#1a1916',
+        'editor.lineHighlightBackground': '#f3f2ef',
+        'editor.selectionBackground': '#f59e0b33',
+        'editorLineNumber.foreground': '#d1cec8',
+        'editorLineNumber.activeForeground': '#6b6760',
+        'editorCursor.foreground': '#f59e0b',
+      }
+    });
+
+    monacoEditor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+      value: '# Select a problem from the sidebar to begin\n\n# Write your solution here, then click ▶ Run Code\n# Your code is executed live via the Piston API',
+      language: 'python',
+      theme: isDark ? 'codeforge-dark' : 'codeforge-light',
+      fontSize: 13,
+      fontFamily: "'DM Mono', 'Fira Code', 'Cascadia Code', monospace",
+      fontLigatures: true,
+      lineHeight: 22,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      tabSize: 2,
+      insertSpaces: true,
+      wordWrap: 'off',
+      renderLineHighlight: 'line',
+      smoothScrolling: true,
+      cursorBlinking: 'smooth',
+      cursorSmoothCaretAnimation: 'on',
+      padding: { top: 16, bottom: 16 },
+      overviewRulerBorder: false,
+      hideCursorInOverviewRuler: true,
+      glyphMargin: false,
+      folding: true,
+      lineDecorationsWidth: 0,
+      renderWhitespace: 'none',
+      bracketPairColorization: { enabled: true },
+    });
+
+    // Ctrl+Enter to run
+    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function() {
+      runCode();
+    });
+  });
+}
+
+function changeLang(lang){
+  if(!monacoEditor) return;
+  const monacoLang = lang === 'cpp' ? 'cpp' : lang === 'java' ? 'java' : lang === 'javascript' ? 'javascript' : 'python';
+  monaco.editor.setModelLanguage(monacoEditor.getModel(), monacoLang);
+
+  // If there's a current problem, update starter code for the language
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  const prob = topic?.problems[curProb];
+  if(prob){
+    if(lang === 'python'){
+      monacoEditor.setValue(prob.starter);
+    } else if(LANG_STARTERS[lang]){
+      monacoEditor.setValue(LANG_STARTERS[lang](prob.starter));
+    }
+  }
+}
+
+function updateMonacoTheme(){
+  if(monacoEditor){
+    const isDark = !document.body.classList.contains('light');
+    monaco.editor.setTheme(isDark ? 'codeforge-dark' : 'codeforge-light');
+  }
+}
+
+// Load Monaco
+(function loadMonacoScript(){
+  // Must be set before loader.min.js runs to suppress blob worker errors
+  window.MonacoEnvironment = { getWorker: function() { return null; } };
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js';
+  script.onload = initMonaco;
+  document.head.appendChild(script);
+})();
+
+// Tab key in editor — Monaco handles this natively, but keep fallback for textarea
+// Tab key fallback for textarea (Monaco handles Tab natively)
+document.getElementById('code-editor').addEventListener('keydown',e=>{
+  if(e.key==='Tab'){
+    e.preventDefault();
+    const ta = e.target;
+    const s = ta.selectionStart;
+    ta.value = ta.value.substring(0,s)+'  '+ta.value.substring(ta.selectionEnd);
+    ta.selectionStart = ta.selectionEnd = s+2;
+  }
+});
+
+// ═══════════════════════════════════════
+// GENDER PICKER
+// ═══════════════════════════════════════
+let selectedGender = '';
+function selectGender(g){
+  selectedGender = g;
+  document.getElementById('gender-male').className   = 'gender-opt' + (g==='male'   ? ' selected-male'   : '');
+  document.getElementById('gender-female').className = 'gender-opt' + (g==='female' ? ' selected-female' : '');
+  document.getElementById('su-gender-err').classList.remove('show');
+}
+
+// ═══════════════════════════════════════
+// AVATAR SVG GENERATOR
+// ═══════════════════════════════════════
+// ═══════════════════════════════════════
+// AVATAR SYSTEM — multi-variant
+// ═══════════════════════════════════════
+
+// avatarId format: "male_1" … "male_6" | "female_1" … "female_6"
+// skin palettes: light, medium, tan, dark
+const SKIN = ['#fcd5a8','#e8b98a','#c68642','#8d5524'];
+// hair palettes (dark brown, black, auburn, blonde, grey, light brown)
+const HAIR_M = ['#5c3d1e','#1a1a1a','#7c2b1a','#c8a84b','#9e9e9e','#8b5e3c'];
+const HAIR_F = ['#7c3f6e','#1a1a1a','#8b2020','#c8a84b','#9e9e9e','#6b3fa0'];
+// shirt colors male
+const SHIRT_M = ['#2563eb','#059669','#7c3aed','#dc2626','#0891b2','#d97706'];
+// top colors female
+const TOP_F   = ['#ec4899','#7c3aed','#059669','#dc2626','#0891b2','#d97706'];
+
+// Build avatarId lookup: variant 1-6 maps to specific combo
+const MALE_VARIANTS = [
+  {skin:0,hair:0,shirt:0,label:'Classic'},
+  {skin:1,hair:1,shirt:1,label:'Dark'},
+  {skin:2,hair:2,shirt:2,label:'Warm'},
+  {skin:3,hair:3,shirt:3,label:'Bold'},
+  {skin:0,hair:4,shirt:4,label:'Silver'},
+  {skin:1,hair:5,shirt:5,label:'Earthy'},
+];
+const FEMALE_VARIANTS = [
+  {skin:0,hair:0,shirt:0,label:'Rosy'},
+  {skin:1,hair:1,shirt:1,label:'Night'},
+  {skin:2,hair:2,shirt:2,label:'Flame'},
+  {skin:3,hair:3,shirt:3,label:'Sunny'},
+  {skin:0,hair:4,shirt:4,label:'Frosty'},
+  {skin:1,hair:5,shirt:5,label:'Violet'},
+];
+
+function buildMaleSVG(v, size){
+  const s = size||32;
+  const sk = SKIN[v.skin], hr = HAIR_M[v.hair], sh = SHIRT_M[v.shirt];
+  const gid = 'mg'+v.shirt+v.skin;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="18" cy="18" r="18" fill="${sh}" opacity=".85"/>
+    <path d="M11 14.5 Q11 7 18 7 Q25 7 25 14.5 Q24 10 18 10 Q12 10 11 14.5Z" fill="${hr}"/>
+    <ellipse cx="18" cy="16.5" rx="5.8" ry="6" fill="${sk}"/>
+    <ellipse cx="11.8" cy="16.5" rx="1.4" ry="1.8" fill="${sk}"/>
+    <ellipse cx="24.2" cy="16.5" rx="1.4" ry="1.8" fill="${sk}"/>
+    <path d="M12 13.5 Q12 8.5 18 8.5 Q24 8.5 24 13.5" stroke="${hr}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M14.5 13.2 Q15.8 12.5 17 13" stroke="${hr}" stroke-width=".8" stroke-linecap="round" fill="none"/>
+    <path d="M19 13 Q20.2 12.5 21.5 13.2" stroke="${hr}" stroke-width=".8" stroke-linecap="round" fill="none"/>
+    <ellipse cx="15.8" cy="15.2" rx=".95" ry="1" fill="#1a1a2e"/>
+    <ellipse cx="20.2" cy="15.2" rx=".95" ry="1" fill="#1a1a2e"/>
+    <path d="M16 18.4 Q18 20.2 20 18.4" stroke="#c47a5a" stroke-width=".9" fill="none" stroke-linecap="round"/>
+    <rect x="16" y="21.5" width="4" height="3" rx="1.2" fill="${sk}"/>
+    <path d="M9 36 Q9 27 18 27 Q27 27 27 36Z" fill="${sh}"/>
+    <path d="M18 27 L15.5 30.5 L18 29 L20.5 30.5Z" fill="white" opacity=".25"/>
+  </svg>`;
+}
+
+function buildFemaleSVG(v, size){
+  const s = size||32;
+  const sk = SKIN[v.skin], hr = HAIR_F[v.hair], tp = TOP_F[v.shirt];
+  return `<svg width="${s}" height="${s}" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="18" cy="18" r="18" fill="${tp}" opacity=".8"/>
+    <ellipse cx="18" cy="17" rx="7" ry="8.5" fill="${hr}"/>
+    <ellipse cx="18" cy="16" rx="5.8" ry="6" fill="${sk}"/>
+    <path d="M11.5 15 Q11.5 8 18 8 Q24.5 8 24.5 15 Q22 12 18 12 Q14 12 11.5 15Z" fill="${hr}"/>
+    <ellipse cx="11.5" cy="18" rx="2" ry="4" fill="${hr}"/>
+    <ellipse cx="24.5" cy="18" rx="2" ry="4" fill="${hr}"/>
+    <ellipse cx="15.8" cy="15.5" rx=".9" ry="1" fill="#1a1a2e"/>
+    <ellipse cx="20.2" cy="15.5" rx=".9" ry="1" fill="#1a1a2e"/>
+    <path d="M14.8 14.5 L14.3 14 M15.6 14.2 L15.5 13.6 M16.4 14.3 L16.3 13.7" stroke="#1a1a2e" stroke-width=".55" stroke-linecap="round"/>
+    <path d="M19.4 14.2 L19.3 13.6 M20.2 14.3 L20.3 13.7 M21 14.5 L21.5 14" stroke="#1a1a2e" stroke-width=".55" stroke-linecap="round"/>
+    <ellipse cx="13.5" cy="17" rx="1.5" ry=".9" fill="#f9a8c9" opacity=".55"/>
+    <ellipse cx="22.5" cy="17" rx="1.5" ry=".9" fill="#f9a8c9" opacity=".55"/>
+    <path d="M15.8 18.2 Q18 20 20.2 18.2" stroke="#c47a8a" stroke-width=".9" fill="none" stroke-linecap="round"/>
+    <rect x="16" y="21" width="4" height="3.5" rx="1.2" fill="${sk}"/>
+    <path d="M9 36 Q9 27 18 27 Q27 27 27 36Z" fill="${tp}" opacity=".9"/>
+  </svg>`;
+}
+
+function makeAvatarSVG(avatarId, size){
+  // avatarId can be legacy "male"/"female" or new "male_N"/"female_N"
+  const s = size || 32;
+  if(!avatarId) return `<span style="font-size:${Math.round(s*0.4)}px;font-weight:700;">?</span>`;
+  const parts = avatarId.split('_');
+  const gender = parts[0];
+  const idx = parts[1] ? parseInt(parts[1])-1 : 0;
+  if(gender === 'female'){
+    const v = FEMALE_VARIANTS[Math.max(0,Math.min(idx, FEMALE_VARIANTS.length-1))];
+    return buildFemaleSVG(v, s);
+  } else {
+    const v = MALE_VARIANTS[Math.max(0,Math.min(idx, MALE_VARIANTS.length-1))];
+    return buildMaleSVG(v, s);
+  }
+}
+
+function makeAvatarLargeSVG(avatarId){
+  return makeAvatarSVG(avatarId, 72);
+}
+
+// Helper: derive avatarId from legacy gender string
+function resolveAvatarId(session){
+  if(session.avatarId) return session.avatarId;
+  if(session.gender)   return session.gender + '_1';
+  return 'male_1';
+}
+
+// ═══════════════════════════════════════
+// AVATAR PICKER (in profile modal)
+// ═══════════════════════════════════════
+let apGender = 'male';
+let apSelected = null;   // currently highlighted in picker (not yet saved)
+
+function toggleAvatarPicker(){
+  const panel = document.getElementById('avatar-picker-panel');
+  const isOpen = panel.classList.contains('open');
+  if(isOpen){ panel.classList.remove('open'); return; }
+  // Init picker with current user's gender/avatar
+  const session = getSession();
+  const curId = resolveAvatarId(session);
+  apGender = curId.startsWith('female') ? 'female' : 'male';
+  apSelected = curId;
+  renderAvatarPicker();
+  panel.classList.add('open');
+  // Scroll to it
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+}
+
+function apSetGender(g){
+  apGender = g;
+  // Keep same variant index if possible
+  const oldIdx = apSelected ? apSelected.split('_')[1] || '1' : '1';
+  apSelected = g + '_' + oldIdx;
+  renderAvatarPicker();
+}
+
+function renderAvatarPicker(){
+  // Gender buttons
+  document.getElementById('ap-male-btn').className   = 'ap-gender-btn' + (apGender==='male'   ? ' active-m' : '');
+  document.getElementById('ap-female-btn').className = 'ap-gender-btn' + (apGender==='female' ? ' active-f' : '');
+
+  const variants = apGender === 'female' ? FEMALE_VARIANTS : MALE_VARIANTS;
+  const grid = document.getElementById('ap-avatar-grid');
+  grid.innerHTML = variants.map((v, i) => {
+    const id = apGender + '_' + (i+1);
+    const svg = apGender === 'female' ? buildFemaleSVG(v, 52) : buildMaleSVG(v, 52);
+    const isSelected = apSelected === id;
+    return `<div class="ap-avatar-opt${isSelected?' selected':''}" onclick="apSelectAvatar('${id}')" title="${v.label}">
+      ${svg}
+      <div class="ap-avatar-lbl">${v.label}</div>
+    </div>`;
+  }).join('');
+}
+
+function apSelectAvatar(id){
+  apSelected = id;
+  // Refresh just the selected states without full re-render
+  document.querySelectorAll('.ap-avatar-opt').forEach((el, i) => {
+    const id2 = apGender + '_' + (i+1);
+    el.classList.toggle('selected', id2 === id);
+  });
+}
+
+function saveAvatarChoice(){
+  if(!apSelected) return;
+  const session = getSession();
+  if(!session) return;
+
+  // Update session
+  const genderBase = apSelected.startsWith('female') ? 'female' : 'male';
+  session.avatarId = apSelected;
+  session.gender   = genderBase;
+  setSession(session);
+
+  // Update stored user record
+  const users = getUsers();
+  if(users[session.email]){
+    users[session.email].avatarId = apSelected;
+    users[session.email].gender   = genderBase;
+    saveUsers(users);
+  }
+
+  // Re-render nav avatars
+  updateNavUser(session);
+
+  // Re-render profile large avatar
+  const lgAvEl = document.getElementById('prof-avatar-lg');
+  lgAvEl.innerHTML = makeAvatarLargeSVG(apSelected);
+  lgAvEl.style.background = 'none';
+  lgAvEl.style.boxShadow  = 'none';
+
+  // Close picker with a brief flash
+  document.getElementById('avatar-picker-panel').classList.remove('open');
+
+  // Show saved toast
+  showToast('✓ Avatar updated!');
+}
+
+// ═══════════════════════════════════════
+// AUTH SYSTEM
+// ═══════════════════════════════════════
+
+// Simple hash (for demo — not cryptographic)
+function hashPw(pw){
+  let h = 0;
+  for(let i=0;i<pw.length;i++){ h = ((h<<5)-h)+pw.charCodeAt(i); h|=0; }
+  return h.toString(36);
+}
+
+function validatePassword(pw){
+  return {
+    len:   pw.length >= 8,
+    upper: /[A-Z]/.test(pw),
+    lower: /[a-z]/.test(pw),
+    num:   /[0-9]/.test(pw),
+  };
+}
+function isStrongPassword(pw){
+  const v = validatePassword(pw);
+  return v.len && v.upper && v.lower && v.num;
+}
+
+// Check if already logged in
+function getSession(){
+  try{ return JSON.parse(localStorage.getItem('cf_session')||'null'); }catch(e){ return null; }
+}
+function getUsers(){
+  try{ return JSON.parse(localStorage.getItem('cf_users')||'{}'); }catch(e){ return {}; }
+}
+function saveUsers(u){ localStorage.setItem('cf_users', JSON.stringify(u)); }
+function setSession(user){ localStorage.setItem('cf_session', JSON.stringify(user)); }
+function clearSession(){ localStorage.removeItem('cf_session'); }
+
+function updateNavUser(user){
+  const initial = user.name.charAt(0).toUpperCase();
+  const firstName = user.name.split(' ')[0];
+  const avatarId = resolveAvatarId(user);
+  const avatarHtml = avatarId ? makeAvatarSVG(avatarId, 32) : `<span style="font-size:12px;font-weight:700;">${initial}</span>`;
+  ['l','p'].forEach(prefix => {
+    const pill  = document.getElementById(prefix+'-user-pill');
+    const av    = document.getElementById(prefix+'-avatar');
+    const un    = document.getElementById(prefix+'-username');
+    const ddName  = document.getElementById(prefix+'-dd-name');
+    const ddEmail = document.getElementById(prefix+'-dd-email');
+    if(pill)   { pill.style.display = 'flex'; }
+    if(av)     { av.innerHTML = avatarHtml; av.style.background = 'none'; av.style.padding = '0'; }
+    if(un)     { un.textContent = firstName; }
+    if(ddName) { ddName.textContent = user.name; }
+    if(ddEmail){ ddEmail.textContent = user.email || ''; }
+  });
+  // Render streak if available
+  if(typeof renderStreak === 'function') renderStreak();
+}
+
+function toggleNavDropdown(pillId){
+  const pill = document.getElementById(pillId);
+  const isOpen = pill.classList.contains('open');
+  // Close all dropdowns first
+  document.querySelectorAll('.nav-user-pill').forEach(p => p.classList.remove('open'));
+  if(!isOpen) pill.classList.add('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.nav-user-pill')){
+    document.querySelectorAll('.nav-user-pill').forEach(p => p.classList.remove('open'));
+  }
+});
+
+function doLogout(){
+  clearSession();
+  solved = [];  // clear in-memory solved for this user
+  selectedGender = '';
+  ['gender-male','gender-female'].forEach(id=>{ const el=document.getElementById(id); if(el) el.className='gender-opt'; });
+  document.querySelectorAll('.nav-user-pill').forEach(p => {
+    p.style.display = 'none';
+    p.classList.remove('open');
+  });
+  document.getElementById('landing').classList.remove('active');
+  document.getElementById('practice').classList.remove('active');
+  document.getElementById('auth-view').classList.add('active');
+  ['li-email','li-pw','su-name','su-email','su-pw','su-pw2'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.value=''; el.className=''; }
+  });
+  if(typeof clearAlert==='function') clearAlert();
+  if(typeof switchTab==='function') switchTab('login');
+}
+
+// On page load — check session
+(function initAuth(){
+  const session = getSession();
+  if(session){
+    // Already logged in — go straight to landing
+    document.getElementById('auth-view').classList.remove('active');
+    document.getElementById('landing').classList.add('active');
+    loadSolved();
+    updateNavUser(session);
+  } else {
+    // Show auth screen
+    document.getElementById('auth-view').classList.add('active');
+  }
+})();
+
+// Tab switching
+function switchTab(tab){
+  document.getElementById('login-form').style.display  = tab==='login'  ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab==='signup' ? 'block' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',  tab==='login');
+  document.getElementById('tab-signup').classList.toggle('active', tab==='signup');
+  clearAlert();
+}
+
+function showAlert(msg, type='error'){
+  const el = document.getElementById('auth-alert');
+  el.textContent = msg;
+  el.className = 'auth-alert show ' + type;
+}
+function clearAlert(){
+  const el = document.getElementById('auth-alert');
+  el.className = 'auth-alert';
+}
+
+function togglePw(id, btn){
+  const inp = document.getElementById(id);
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+// Password strength checker
+function checkPwStrength(pw){
+  const v = validatePassword(pw);
+  // Update requirement dots
+  toggleReq('req-len',   v.len);
+  toggleReq('req-upper', v.upper);
+  toggleReq('req-lower', v.lower);
+  toggleReq('req-num',   v.num);
+  // Strength score
+  const score = [v.len, v.upper, v.lower, v.num].filter(Boolean).length;
+  const colors = ['var(--red)','var(--red)','var(--amber)','var(--amber)','var(--green)'];
+  const labels = ['','Weak','Fair','Good','Strong'];
+  const segs = [document.getElementById('ps1'),document.getElementById('ps2'),document.getElementById('ps3'),document.getElementById('ps4')];
+  segs.forEach((s,i) => s.style.background = i < score ? colors[score] : 'var(--bg4)');
+  document.getElementById('pw-strength-label').textContent = labels[score] || 'Start typing...';
+  document.getElementById('pw-strength-label').style.color = colors[score] || 'var(--muted)';
+  // Show bar
+  const bar = document.getElementById('pw-strength');
+  if(pw.length > 0) bar.classList.add('show'); else bar.classList.remove('show');
+}
+function toggleReq(id, met){
+  const el = document.getElementById(id);
+  if(el){ el.classList.toggle('met', met); }
+}
+
+// LOGIN
+function doLogin(){
+  clearAlert();
+  const email = document.getElementById('li-email').value.trim();
+  const pw    = document.getElementById('li-pw').value;
+  let valid = true;
+  if(!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)){
+    document.getElementById('li-email-err').classList.add('show');
+    document.getElementById('li-email').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('li-email-err').classList.remove('show');
+    document.getElementById('li-email').classList.remove('error');
+  }
+  if(!pw){
+    document.getElementById('li-pw-err').classList.add('show');
+    document.getElementById('li-pw').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('li-pw-err').classList.remove('show');
+    document.getElementById('li-pw').classList.remove('error');
+  }
+  if(!valid) return;
+
+  const users = getUsers();
+  const key   = email.toLowerCase();
+  if(!users[key]){
+    showAlert('No account found with that email. Please sign up first.');
+    return;
+  }
+  if(users[key].pw !== hashPw(pw)){
+    showAlert('Incorrect password. Please try again.');
+    document.getElementById('li-pw').classList.add('error');
+    return;
+  }
+  // Success
+  const user = { name: users[key].name, email: key, gender: users[key].gender || '', avatarId: users[key].avatarId || '' };
+  setSession(user);
+  loadSolved();
+  updateNavUser(user);
+  document.getElementById('auth-view').classList.remove('active');
+  document.getElementById('landing').classList.add('active');
+}
+
+// SIGNUP
+function doSignup(){
+  clearAlert();
+  const name  = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pw    = document.getElementById('su-pw').value;
+  const pw2   = document.getElementById('su-pw2').value;
+  let valid = true;
+
+  // Name
+  if(!name){
+    document.getElementById('su-name-err').classList.add('show');
+    document.getElementById('su-name').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('su-name-err').classList.remove('show');
+    document.getElementById('su-name').classList.remove('error');
+    document.getElementById('su-name').classList.add('valid');
+  }
+  // Gender
+  if(!selectedGender){
+    document.getElementById('su-gender-err').classList.add('show');
+    valid = false;
+  } else {
+    document.getElementById('su-gender-err').classList.remove('show');
+  }
+  // Email
+  if(!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)){
+    document.getElementById('su-email-err').classList.add('show');
+    document.getElementById('su-email').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('su-email-err').classList.remove('show');
+    document.getElementById('su-email').classList.remove('error');
+    document.getElementById('su-email').classList.add('valid');
+  }
+  // Password strength
+  if(!isStrongPassword(pw)){
+    document.getElementById('su-pw-err').classList.add('show');
+    document.getElementById('su-pw').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('su-pw-err').classList.remove('show');
+    document.getElementById('su-pw').classList.remove('error');
+    document.getElementById('su-pw').classList.add('valid');
+  }
+  // Confirm password
+  if(pw !== pw2){
+    document.getElementById('su-pw2-err').classList.add('show');
+    document.getElementById('su-pw2').classList.add('error');
+    valid = false;
+  } else {
+    document.getElementById('su-pw2-err').classList.remove('show');
+    document.getElementById('su-pw2').classList.remove('error');
+    if(pw2) document.getElementById('su-pw2').classList.add('valid');
+  }
+  if(!valid) return;
+
+  const users = getUsers();
+  const key   = email.toLowerCase();
+  if(users[key]){
+    showAlert('An account with this email already exists. Please sign in.');
+    return;
+  }
+  // Save user
+  users[key] = { name, pw: hashPw(pw), gender: selectedGender, avatarId: selectedGender+'_1' };
+  saveUsers(users);
+  const user = { name, email: key, gender: selectedGender, avatarId: selectedGender+'_1' };
+  setSession(user);
+  loadSolved();
+  updateNavUser(user);
+  showAlert('Account created! Welcome to CodeForge, '+name.split(' ')[0]+'!', 'success');
+  setTimeout(()=>{
+    document.getElementById('auth-view').classList.remove('active');
+    document.getElementById('landing').classList.add('active');
+  }, 1200);
+}
+
+// ═══════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════
+let isDark = true;
+function toggleTheme(){
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  const icon = isDark ? '🌙' : '☀️';
+  ['l-theme-toggle','p-theme-toggle'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = icon;
+  });
+  localStorage.setItem('cf_theme', isDark ? 'dark' : 'light');
+  updateMonacoTheme();
+}
+(function initTheme(){
+  const saved = localStorage.getItem('cf_theme');
+  if(saved === 'light'){
+    isDark = false;
+    document.body.classList.add('light');
+    setTimeout(()=>{
+      ['l-theme-toggle','p-theme-toggle'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.textContent = '☀️';
+      });
+    }, 0);
+  }
+})();
+
+// ═══════════════════════════════════════
+// STREAK TRACKER
+// ═══════════════════════════════════════
+function streakKey(){
+  try{
+    const s = JSON.parse(localStorage.getItem('cf_session')||'null');
+    return s ? 'cf_streak_'+s.email : 'cf_streak_guest';
+  }catch(e){ return 'cf_streak_guest'; }
+}
+function getStreak(){
+  const today = new Date().toDateString();
+  const data  = JSON.parse(localStorage.getItem(streakKey())||'{"count":0,"last":""}');
+  const yesterday = new Date(Date.now()-86400000).toDateString();
+  if(data.last === today) return data;
+  if(data.last === yesterday){ data.count++; }
+  else if(data.last !== today){ data.count = 1; }
+  data.last = today;
+  localStorage.setItem(streakKey(), JSON.stringify(data));
+  return data;
+}
+function renderStreak(){
+  const s = getStreak();
+  const label = s.count === 1 ? '1 day streak' : s.count+' day streak';
+  ['l-streak-label','p-streak-label'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.textContent = label;
+  });
+  ['l-streak','p-streak'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'flex';
+  });
+}
+
+// ═══════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════
+let timerSec = 0, timerRunning = false, timerInterval = null;
+function startTimer(){
+  if(timerRunning) return;
+  timerRunning = true;
+  document.getElementById('timer-toggle-btn').textContent = '⏸';
+  timerInterval = setInterval(()=>{
+    timerSec++;
+    updateTimerDisplay();
+  }, 1000);
+}
+function pauseTimer(){
+  timerRunning = false;
+  document.getElementById('timer-toggle-btn').textContent = '▶';
+  clearInterval(timerInterval);
+}
+function toggleTimer(){
+  if(timerRunning) pauseTimer(); else startTimer();
+}
+function resetTimer(){
+  pauseTimer();
+  timerSec = 0;
+  updateTimerDisplay();
+  document.getElementById('timer-display').className = 'timer-display';
+}
+function updateTimerDisplay(){
+  const m = Math.floor(timerSec/60).toString().padStart(2,'0');
+  const s = (timerSec%60).toString().padStart(2,'0');
+  const el = document.getElementById('timer-display');
+  if(el){
+    el.textContent = m+':'+s;
+    el.className = 'timer-display' + (timerSec>1800?' danger':timerSec>900?' warning':'');
+  }
+}
+
+// ═══════════════════════════════════════
+// NOTES SYSTEM
+// ═══════════════════════════════════════
+let notesOpen = false;
+function toggleNotes(){
+  notesOpen = !notesOpen;
+  document.getElementById('notes-body').classList.toggle('open', notesOpen);
+  document.getElementById('notes-toggle-icon').classList.toggle('open', notesOpen);
+}
+function noteKey(probId){
+  try{
+    const s = JSON.parse(localStorage.getItem('cf_session')||'null');
+    return s ? 'cf_note_'+s.email+'_'+probId : 'cf_note_guest_'+probId;
+  }catch(e){ return 'cf_note_guest_'+probId; }
+}
+function loadNotes(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  const prob  = topic.problems[curProb];
+  const note  = localStorage.getItem(noteKey(prob.id))||'';
+  document.getElementById('notes-textarea').value = note;
+  document.getElementById('notes-saved').classList.remove('show');
+}
+function saveNotes(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  const prob = topic.problems[curProb];
+  localStorage.setItem(noteKey(prob.id), document.getElementById('notes-textarea').value);
+  const el = document.getElementById('notes-saved');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2000);
+}
+
+// ═══════════════════════════════════════
+// HINTS SYSTEM
+// ═══════════════════════════════════════
+const HINTS = {
+  a1:['Think about what information you need to remember as you iterate through the array.','A hash map can store values you have already seen, along with their indices.','For each element, check if (target - element) exists in your hash map. If yes, you found the pair.'],
+  a2:['Track the minimum price seen so far as you scan left to right.','At each price, calculate the profit if you sold today (current price - minimum so far).','Keep updating the maximum profit as you go. You never need to look backwards.'],
+  a3:['Consider the product of all elements to the left of index i, and all elements to the right.','Use two passes: one left-to-right to build prefix products, one right-to-left for suffix products.','Multiply prefix[i] * suffix[i] for each index. No division needed.'],
+  s1:['If two strings are anagrams, they have the same character frequencies.','A hash map or Counter can tally character counts for both strings.','Compare the two frequency maps — if identical, they are anagrams.'],
+  s2:['Use a sliding window with two pointers: left and right.','Expand right pointer; if a duplicate is found, shrink from the left until the duplicate is removed.','Track characters in the current window using a set or hash map.'],
+  s3:['Use a sliding window approach with two pointers.','Keep a count of required characters from t that are satisfied in your current window.','Shrink the window from the left when all characters of t are covered, updating the minimum.'],
+  t1:['Think recursively: the depth of a tree is 1 + max(depth of left, depth of right).','Base case: an empty node has depth 0.','This naturally leads to a recursive DFS solution.'],
+  t2:['At each node, swap the left and right children.','Then recursively invert the left and right subtrees.','This is a simple DFS — the recursive structure mirrors the tree structure.'],
+  t3:['Use a queue (BFS). Start by adding the root.','At each level, process all nodes currently in the queue and add their children.','Collect node values level by level into a result list.'],
+  d1:['Notice that to reach step n, you could have come from step n-1 or step n-2.','This gives you a recurrence: ways(n) = ways(n-1) + ways(n-2).','Base cases: ways(1) = 1, ways(2) = 2. Does this pattern look familiar?'],
+  d2:['At each house, you have two choices: rob it or skip it.','If you rob house i, you get nums[i] + best result from house i-2 onward.','If you skip house i, you get the best result from house i-1 onward. Take the max.'],
+  d3:['Build a 2D DP table where dp[i][j] = LCS of text1[:i] and text2[:j].','If text1[i-1] == text2[j-1], then dp[i][j] = dp[i-1][j-1] + 1.','Otherwise dp[i][j] = max(dp[i-1][j], dp[i][j-1]).'],
+  g1:['When you find a "1", trigger a DFS or BFS to mark all connected land cells.','Mark visited cells (change "1" to "0" or use a visited set).','Each time you trigger a new DFS from an unvisited "1", increment your island count.'],
+  g2:['Use a hash map to map original nodes to their clones.','DFS through the graph. For each neighbor, recursively clone it if not already cloned.','The hash map prevents infinite loops by tracking already-cloned nodes.'],
+  so1:['Use three pointers: low, mid, high. This is the Dutch National Flag algorithm.','Swap nums[mid] based on its value: 0 goes to low region, 2 goes to high region, 1 stays.','Increment mid when value is 0 or 1, increment low when value is 0.'],
+  so2:['First sort intervals by their start time.','Then iterate and merge overlapping intervals: if current start <= previous end, merge them.','The merged interval end is max(current end, previous end).'],
+  l1:['Use three pointers: prev (None), curr (head), next.','At each step: save next, point curr.next to prev, move prev to curr, move curr to next.','When curr is None, prev is your new head.'],
+  l2:['Use two pointers: slow and fast. Slow moves 1 step, fast moves 2 steps.','If there is a cycle, fast will eventually lap slow and they will meet.','If fast reaches None (or None.next), there is no cycle.'],
+  r1:['Use backtracking. Track the count of open and close parentheses used so far.','You can add "(" if open count < n. You can add ")" if close count < open count.','Recurse until both open and close counts equal n, then add to results.'],
+  r2:['For each element, you have two choices: include it or exclude it.','Recurse through the array making both choices at each step.','This naturally generates all 2^n subsets.'],
+};
+let curHintIdx = 0;
+function showHint(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  const prob = topic.problems[curProb];
+  const hints = HINTS[prob.id]||['Think about the data structure best suited for this problem.','Consider the time complexity you are targeting — can you do better than O(n²)?','Look for a pattern in the examples that reveals the algorithm.'];
+  curHintIdx = 0;
+  renderHint(prob.id, hints);
+  document.getElementById('hint-panel').classList.add('show');
+}
+function renderHint(probId, hints){
+  document.getElementById('hint-num').textContent = 'Hint '+(curHintIdx+1)+' of '+hints.length;
+  document.getElementById('hint-text').textContent = hints[curHintIdx];
+  const nextBtn = document.getElementById('hint-next-btn');
+  if(curHintIdx >= hints.length-1){ nextBtn.style.display='none'; }
+  else { nextBtn.style.display='block'; nextBtn.textContent = 'Next hint →'; }
+}
+function nextHint(){
+  const topic = TOPICS.find(t=>t.id===curTopic);
+  if(!topic) return;
+  const prob  = topic.problems[curProb];
+  const hints = HINTS[prob.id]||['Think about the data structure.','Consider time complexity.','Look for a pattern.'];
+  curHintIdx = Math.min(curHintIdx+1, hints.length-1);
+  renderHint(prob.id, hints);
+}
+
+// ═══════════════════════════════════════
+// SEARCH PROBLEMS
+// ═══════════════════════════════════════
+function searchProblems(query){
+  const q = query.toLowerCase().trim();
+  const container = document.getElementById('sb-topics');
+  if(!q){ renderSidebar(); return; }
+  let html = '';
+  TOPICS.forEach(t=>{
+    t.problems.forEach((p,i)=>{
+      const matchesSearch = p.title.toLowerCase().includes(q) || t.name.toLowerCase().includes(q);
+      const matchesDiff   = curDiffFilter === 'all' || p.diff === curDiffFilter;
+      if(matchesSearch && matchesDiff){
+        const isSolved = solved.includes(p.id);
+        const diffColor = p.diff==='Easy'?'var(--green)':p.diff==='Medium'?'var(--amber)':'var(--red)';
+        html += `<button class="sb-topic-btn ${isSolved?'done':''}" onclick="curTopic='${t.id}';curProb=${i};renderSidebar();loadProblem();document.getElementById('prob-search').value='';searchProblems('');">
+          <span class="sb-topic-icon">${t.icon}</span>
+          <span style="flex:1;text-align:left;">${p.title} <span style="font-size:10px;color:var(--muted2);">(${t.name})</span></span>
+          <span style="font-size:10px;font-weight:700;color:${diffColor};font-family:var(--mono);">${p.diff}</span>
+          ${isSolved?'<span class="sb-topic-check">✓</span>':''}
+        </button>`;
+      }
+    });
+  });
+  container.innerHTML = html || '<div style="padding:16px;font-size:12px;color:var(--muted);text-align:center;">No problems found</div>';
+}
+
+// ═══════════════════════════════════════
+// PROFILE
+// ═══════════════════════════════════════
+function openProfile(){
+  const session = getSession();
+  if(!session) return;
+  const streak = getStreak();
+  const hardIds = TOPICS.flatMap(t=>t.problems.filter(p=>p.diff==='Hard').map(p=>p.id));
+  const hardSolved = hardIds.filter(id=>solved.includes(id)).length;
+  const avatarId = resolveAvatarId(session);
+  const lgAvEl = document.getElementById('prof-avatar-lg');
+  lgAvEl.innerHTML = makeAvatarLargeSVG(avatarId);
+  lgAvEl.style.background = 'none';
+  lgAvEl.style.boxShadow = 'none';
+  lgAvEl.style.width = '72px';
+  lgAvEl.style.height = '72px';
+  document.getElementById('prof-name').textContent = session.name;
+  document.getElementById('prof-email').textContent = session.email;
+  document.getElementById('prof-total').textContent = solved.length;
+  document.getElementById('prof-streak').textContent = streak.count+'🔥';
+  document.getElementById('prof-hard').textContent = hardSolved;
+  // Topic bars
+  const bars = TOPICS.map(t=>{
+    const done = t.problems.filter(p=>solved.includes(p.id)).length;
+    const pct  = Math.round((done/t.problems.length)*100);
+    return `<div class="ptb-row">
+      <div class="ptb-label">${t.icon} ${t.name}</div>
+      <div class="ptb-bar-wrap"><div class="ptb-bar-fill" style="width:${pct}%"></div></div>
+      <div class="ptb-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+  document.getElementById('prof-topic-bars').innerHTML = bars;
+  document.getElementById('profile-view').classList.add('open');
+}
+function closeProfile(){
+  document.getElementById('profile-view').classList.remove('open');
+}
+document.getElementById('profile-view').addEventListener('click',e=>{
+  if(e.target.id==='profile-view') closeProfile();
+});
+
+// ═══════════════════════════════════════
+// EXPORT PROGRESS (PDF-style print)
+// ═══════════════════════════════════════
+function exportProgress(){
+  const session = getSession();
+  if(!session) return;
+  const streak  = getStreak();
+  const totalProblems = TOPICS.reduce((a,t)=>a+t.problems.length,0);
+  const easyIds   = TOPICS.flatMap(t=>t.problems.filter(p=>p.diff==='Easy').map(p=>p.id));
+  const medIds    = TOPICS.flatMap(t=>t.problems.filter(p=>p.diff==='Medium').map(p=>p.id));
+  const hardIds   = TOPICS.flatMap(t=>t.problems.filter(p=>p.diff==='Hard').map(p=>p.id));
+  const easySolved = easyIds.filter(id=>solved.includes(id)).length;
+  const medSolved  = medIds.filter(id=>solved.includes(id)).length;
+  const hardSolved = hardIds.filter(id=>solved.includes(id)).length;
+  const overallPct = Math.round((solved.length / totalProblems) * 100);
+
+  // Readiness score calculation
+  const readiness = Math.min(100, Math.round((easySolved*1 + medSolved*2.5 + hardSolved*5) / 1.5));
+  const readinessLabel = readiness >= 80 ? 'Interview Ready' : readiness >= 55 ? 'Getting There' : readiness >= 30 ? 'Building Up' : 'Just Starting';
+  const readinessColor = readiness >= 80 ? '#10b981' : readiness >= 55 ? '#f59e0b' : readiness >= 30 ? '#f97316' : '#8a8178';
+
+  const topicRows = TOPICS.map(t=>{
+    const done = t.problems.filter(p=>solved.includes(p.id)).length;
+    const pct  = Math.round((done/t.problems.length)*100);
+    const barColor = pct===100 ? '#10b981' : pct>=60 ? '#f59e0b' : '#e8e6e1';
+    const statusDot = pct===100 ? '●' : pct>0 ? '◐' : '○';
+    const statusColor = pct===100 ? '#10b981' : pct>0 ? '#f59e0b' : '#d1cec8';
+    return `<tr>
+      <td><span style="font-size:15px;margin-right:8px;">${t.icon}</span>${t.name}</td>
+      <td style="text-align:center;font-weight:600;">${done}<span style="color:#b8b5af;font-weight:400;">/${t.problems.length}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:5px;background:#f0ede8;border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${pct===100?'#10b981':pct>=60?'#f59e0b':'#b8b5af'};min-width:30px;text-align:right;">${pct}%</span>
+        </div>
+      </td>
+      <td style="text-align:center;color:${statusColor};font-size:14px;">${statusDot}</td>
+    </tr>`;
+  }).join('');
+
+  // Solved problems list per topic
+  const solvedDetail = TOPICS.map(t=>{
+    const doneProbs = t.problems.filter(p=>solved.includes(p.id));
+    if(!doneProbs.length) return '';
+    const pills = doneProbs.map(p=>{
+      const c = p.diff==='Easy'?'#dcfce7,#16a34a':p.diff==='Medium'?'#fef9c3,#ca8a04':'#fee2e2,#dc2626';
+      const [bg,col] = c.split(',');
+      return `<span style="display:inline-flex;align-items:center;gap:5px;background:${bg};color:${col};padding:3px 10px;border-radius:100px;font-size:10px;font-weight:600;margin:2px;">${p.title}</span>`;
+    }).join('');
+    return `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:#8a8178;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">${t.icon} ${t.name}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:2px;">${pills}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const dateStr = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const initial = session.name.charAt(0).toUpperCase();
+
+  const win = window.open('','_blank');
+  const doc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CodeForge — Progress Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  @page{ margin:0; size:A4 portrait; }
+  body{
+    font-family:'Manrope',sans-serif;
+    background:#ffffff;
+    color:#1a1916;
+    line-height:1.5;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  /* ── HEADER BAND ── */
+  .header{
+    background:linear-gradient(135deg,#141210 0%,#201e1a 60%,#1a1815 100%);
+    padding:44px 52px 40px;
+    position:relative;
+    overflow:hidden;
+  }
+  .header-mesh{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 70% 80% at 80% 50%,rgba(245,158,11,.12) 0%,transparent 60%),
+      radial-gradient(ellipse 40% 60% at 20% 80%,rgba(16,185,129,.06) 0%,transparent 55%);
+  }
+  .header-grid{
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+    background-size:40px 40px;
+    mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,black 30%,transparent 80%);
+  }
+  .header-inner{ position:relative;z-index:1; display:flex; align-items:flex-start; justify-content:space-between; }
+  .header-left{}
+  .logo-row{ display:flex; align-items:center; gap:10px; margin-bottom:24px; }
+  .logo-icon{
+    width:36px;height:36px;
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+    border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-family:'DM Mono',monospace;font-size:14px;color:#fff;font-weight:500;
+    box-shadow:0 0 20px rgba(245,158,11,.35);
+    flex-shrink:0;
+  }
+  .logo-text{ font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:#f0ebe3; letter-spacing:-.3px; }
+  .logo-text em{ font-style:italic; color:#f59e0b; }
+  .report-title{
+    font-family:'Fraunces',serif;
+    font-size:38px; font-weight:300; letter-spacing:-1.5px;
+    color:#f0ebe3; line-height:1.05; margin-bottom:10px;
+  }
+  .report-title em{ font-style:italic; color:#f59e0b; }
+  .report-meta{ font-family:'DM Mono',monospace; font-size:11px; color:#5a5450; letter-spacing:.5px; }
+  .header-avatar{
+    width:64px;height:64px;border-radius:50%;
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:#141210;
+    box-shadow:0 0 28px rgba(245,158,11,.3);
+    flex-shrink:0;
+  }
+
+  /* ── USER STRIP ── */
+  .user-strip{
+    background:#fafaf8;
+    border-bottom:1px solid #e8e6e1;
+    padding:18px 52px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .user-name{ font-size:15px;font-weight:700;color:#1a1916; }
+  .user-email{ font-size:12px;color:#8a8178;margin-top:1px;font-family:'DM Mono',monospace; }
+  .readiness-badge{
+    display:flex;align-items:center;gap:10px;
+    background:${readiness>=80?'#f0fdf4':readiness>=55?'#fefce8':'#fff7ed'};
+    border:1px solid ${readiness>=80?'#bbf7d0':readiness>=55?'#fde68a':'#fed7aa'};
+    border-radius:100px;padding:7px 16px;
+  }
+  .readiness-score{ font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:${readinessColor}; }
+  .readiness-text{ font-size:11px;font-weight:700;color:${readinessColor};text-transform:uppercase;letter-spacing:.5px; }
+
+  /* ── BODY ── */
+  .body{ padding:36px 52px; }
+
+  /* ── STAT CARDS ── */
+  .stats-section{ margin-bottom:32px; }
+  .section-label{
+    font-family:'DM Mono',monospace;font-size:10px;color:#f59e0b;
+    letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;
+  }
+  .stat-grid{ display:grid;grid-template-columns:repeat(4,1fr);gap:12px; }
+  .stat-card{
+    background:#f9f9f7;border:1px solid #e8e6e1;
+    border-radius:12px;padding:18px 16px;text-align:center;
+    position:relative;overflow:hidden;
+  }
+  .stat-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:var(--accent,#f59e0b);
+  }
+  .stat-n{
+    font-family:'Fraunces',serif;font-size:34px;font-weight:300;
+    color:var(--accent,#f59e0b);line-height:1;margin-bottom:6px;
+  }
+  .stat-l{ font-size:10px;color:#8a8178;font-weight:600;text-transform:uppercase;letter-spacing:.5px; }
+
+  /* ── OVERALL PROGRESS BAR ── */
+  .overall-bar-wrap{ margin-bottom:32px; }
+  .overall-bar-label{ display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px; }
+  .overall-bar-title{ font-size:13px;font-weight:600;color:#1a1916; }
+  .overall-bar-pct{ font-family:'DM Mono',monospace;font-size:12px;color:#f59e0b;font-weight:500; }
+  .overall-bar{
+    height:8px;background:#f0ede8;border-radius:4px;overflow:hidden;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.04);
+  }
+  .overall-bar-fill{
+    height:100%;width:${overallPct}%;
+    background:linear-gradient(90deg,#f59e0b,#f97316);
+    border-radius:4px;
+  }
+
+  /* ── DIFFICULTY BREAKDOWN ── */
+  .diff-row{ display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px; }
+  .diff-card{
+    border-radius:10px;padding:14px 16px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .diff-card.easy{ background:#f0fdf4;border:1px solid #bbf7d0; }
+  .diff-card.med{  background:#fefce8;border:1px solid #fde68a; }
+  .diff-card.hard{ background:#fff1f2;border:1px solid #fecdd3; }
+  .diff-dot{ width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+  .diff-info{flex:1;}
+  .diff-label{ font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px; }
+  .diff-count{ font-family:'Fraunces',serif;font-size:20px;font-weight:300; }
+  .diff-of{ font-size:11px;color:#8a8178; }
+
+  /* ── TOPIC TABLE ── */
+  .topic-section{ margin-bottom:32px; }
+  table{ width:100%;border-collapse:collapse; }
+  thead tr{ background:#f5f3f0; }
+  th{
+    padding:10px 14px;font-size:10px;font-weight:700;
+    color:#8a8178;text-transform:uppercase;letter-spacing:.8px;
+    text-align:left;border-bottom:1px solid #e8e6e1;
+  }
+  th:nth-child(2),th:nth-child(4){ text-align:center; }
+  td{ padding:11px 14px;font-size:13px;border-bottom:1px solid #f5f3f0;vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:#fafaf8; }
+  .table-wrap{
+    border:1px solid #e8e6e1;border-radius:12px;overflow:hidden;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+
+  /* ── SOLVED PROBLEMS ── */
+  .solved-section{ margin-bottom:32px; }
+  .solved-empty{
+    padding:24px;text-align:center;
+    font-size:13px;color:#b8b5af;
+    background:#fafaf8;border-radius:10px;border:1px solid #e8e6e1;
+  }
+
+  /* ── FOOTER ── */
+  .footer{
+    background:#f5f3f0;border-top:1px solid #e8e6e1;
+    padding:18px 52px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .footer-logo{ font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#1a1916; }
+  .footer-logo em{ font-style:italic;color:#f59e0b; }
+  .footer-info{ font-size:11px;color:#8a8178;text-align:right;font-family:'DM Mono',monospace;line-height:1.6; }
+
+  @media print{
+    body{ background:#fff; }
+    .header{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .stat-card::before{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-mesh"></div>
+  <div class="header-grid"></div>
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="logo-row">
+        <div class="logo-icon">&lt;/&gt;</div>
+        <div class="logo-text">Code<em>Forge</em></div>
+      </div>
+      <div class="report-title"><em>Progress</em><br>Report</div>
+      <div class="report-meta">GENERATED · ${dateStr.toUpperCase()}</div>
+    </div>
+    <div class="header-avatar">${initial}</div>
+  </div>
+</div>
+
+<!-- USER STRIP -->
+<div class="user-strip">
+  <div>
+    <div class="user-name">${session.name}</div>
+    <div class="user-email">${session.email}</div>
+  </div>
+  <div class="readiness-badge">
+    <div class="readiness-score">${readiness}%</div>
+    <div class="readiness-text">${readinessLabel}</div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- STAT CARDS -->
+  <div class="stats-section">
+    <div class="section-label">At a Glance</div>
+    <div class="stat-grid">
+      <div class="stat-card" style="--accent:#f59e0b">
+        <div class="stat-n">${solved.length}</div>
+        <div class="stat-l">Problems Solved</div>
+      </div>
+      <div class="stat-card" style="--accent:#f97316">
+        <div class="stat-n">${streak.count}🔥</div>
+        <div class="stat-l">Day Streak</div>
+      </div>
+      <div class="stat-card" style="--accent:#10b981">
+        <div class="stat-n">${overallPct}%</div>
+        <div class="stat-l">Completion</div>
+      </div>
+      <div class="stat-card" style="--accent:#ef4444">
+        <div class="stat-n">${hardSolved}</div>
+        <div class="stat-l">Hard Solved</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERALL BAR -->
+  <div class="overall-bar-wrap">
+    <div class="overall-bar-label">
+      <span class="overall-bar-title">Overall Progress — ${solved.length} of ${totalProblems} problems complete</span>
+      <span class="overall-bar-pct">${overallPct}%</span>
+    </div>
+    <div class="overall-bar"><div class="overall-bar-fill"></div></div>
+  </div>
+
+  <!-- DIFFICULTY BREAKDOWN -->
+  <div class="section-label" style="margin-bottom:14px;">Difficulty Breakdown</div>
+  <div class="diff-row">
+    <div class="diff-card easy">
+      <div class="diff-dot" style="background:#22c55e;"></div>
+      <div class="diff-info">
+        <div class="diff-label" style="color:#16a34a;">Easy</div>
+        <div class="diff-count" style="color:#15803d;">${easySolved}</div>
+        <div class="diff-of">${easySolved} of ${easyIds.length} solved</div>
+      </div>
+    </div>
+    <div class="diff-card med">
+      <div class="diff-dot" style="background:#eab308;"></div>
+      <div class="diff-info">
+        <div class="diff-label" style="color:#ca8a04;">Medium</div>
+        <div class="diff-count" style="color:#b45309;">${medSolved}</div>
+        <div class="diff-of">${medSolved} of ${medIds.length} solved</div>
+      </div>
+    </div>
+    <div class="diff-card hard">
+      <div class="diff-dot" style="background:#ef4444;"></div>
+      <div class="diff-info">
+        <div class="diff-label" style="color:#dc2626;">Hard</div>
+        <div class="diff-count" style="color:#b91c1c;">${hardSolved}</div>
+        <div class="diff-of">${hardSolved} of ${hardIds.length} solved</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOPIC TABLE -->
+  <div class="topic-section">
+    <div class="section-label">Progress by Topic</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th style="text-align:center;">Solved</th>
+            <th>Completion</th>
+            <th style="text-align:center;">Status</th>
+          </tr>
+        </thead>
+        <tbody>${topicRows}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SOLVED PROBLEMS DETAIL -->
+  <div class="solved-section">
+    <div class="section-label">Solved Problems</div>
+    ${solvedDetail || '<div class="solved-empty">No problems solved yet — start practicing to see your list here!</div>'}
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div>
+    <div class="footer-logo">Code<em>Forge</em></div>
+    <div style="font-size:11px;color:#b8b5af;margin-top:2px;">Cognifyz Technologies Web Dev Internship · 2026</div>
+  </div>
+  <div class="footer-info">
+    codeforge10@gmail.com · www.codeforge.com<br>
+    @codeforge-tech
+  </div>
+</div>
+
+<script>window.onload=function(){ setTimeout(function(){ window.print(); }, 400); }<\/script>
+</body>
+</html>`;
+  win.document.open();
+  win.document.write(doc);
+  win.document.close();
+}
+
+// ═══════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════
+function launchConfetti(){
+  const colors = ['#f59e0b','#10b981','#3b82f6','#f97316','#a78bfa','#ef4444','#fbbf24'];
+  for(let i=0;i<60;i++){
+    setTimeout(()=>{
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `
+        left:${Math.random()*100}vw;
+        top:-10px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        width:${6+Math.random()*8}px;
+        height:${6+Math.random()*8}px;
+        border-radius:${Math.random()>0.5?'50%':'2px'};
+        animation-duration:${1.5+Math.random()*2}s;
+        animation-delay:${Math.random()*0.5}s;
+      `;
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(), 3000);
+    }, i*30);
+  }
+}
+
+// ═══════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════
+let toastTimer = null;
+function showToast(msg){
+  const el = document.getElementById('shortcut-toast')||createToast();
+  el.innerHTML = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+function createToast(){
+  const el = document.createElement('div');
+  el.className = 'shortcut-toast';
+  el.id = 'shortcut-toast';
+  document.body.appendChild(el);
+  return el;
+}
+document.addEventListener('keydown',e=>{
+  const inInput = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
+  // Ctrl+Enter — run code
+  if(e.ctrlKey && e.key==='Enter' && document.getElementById('practice').classList.contains('active')){
+    e.preventDefault();
+    runCode();
+    showToast('<kbd>Ctrl</kbd> + <kbd>Enter</kbd> — Run Code');
+    return;
+  }
+  // Ctrl+K — focus search
+  if(e.ctrlKey && e.key==='k' && document.getElementById('practice').classList.contains('active')){
+    e.preventDefault();
+    const s = document.getElementById('prob-search');
+    if(s){ s.focus(); s.select(); }
+    showToast('<kbd>Ctrl</kbd> + <kbd>K</kbd> — Search problems');
+    return;
+  }
+  // Ctrl+D — toggle theme
+  if(e.ctrlKey && e.key==='d'){
+    e.preventDefault();
+    toggleTheme();
+    showToast('<kbd>Ctrl</kbd> + <kbd>D</kbd> — Toggle theme');
+    return;
+  }
+  // Ctrl+T — toggle timer
+  if(e.ctrlKey && e.key==='t' && document.getElementById('practice').classList.contains('active')){
+    e.preventDefault();
+    toggleTimer();
+    showToast('<kbd>Ctrl</kbd> + <kbd>T</kbd> — Toggle timer');
+    return;
+  }
+  // Arrow keys for prev/next problem (only when not in editor)
+  if(!inInput && document.getElementById('practice').classList.contains('active')){
+    if(e.key==='ArrowRight'){ nextProb(); showToast('<kbd>→</kbd> — Next problem'); }
+    if(e.key==='ArrowLeft'){  prevProb(); showToast('<kbd>←</kbd> — Previous problem'); }
+  }
+});
+
+
+</script>
+</body>
+</html>
